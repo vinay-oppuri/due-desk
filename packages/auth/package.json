@@ -1,0 +1,10 @@
+{
+  "name": "@repo/auth", "version": "0.1.0", "private": true, "type": "module",
+  "exports": {
+    "./server": { "types": "./dist/server.d.ts", "default": "./dist/server.js" },
+    "./client": { "types": "./dist/client.d.ts", "default": "./dist/client.js" }
+  },
+  "scripts": { "build": "tsc -p tsconfig.json", "check-types": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": { "@better-auth/drizzle-adapter": "^1.7.7", "@repo/db": "workspace:*", "better-auth": "^1.7.7" },
+  "devDependencies": { "@repo/typescript-config": "workspace:*", "@types/node": "^24.0.0" }
+}
