@@ -1,20 +1,5 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { db } from "../../packages/db/dist/index.js";
 import { complianceRules, holidays } from "../../packages/db/dist/schema.js";
-
-// Auto-load .env
-if (!process.env.DATABASE_URL && typeof process.loadEnvFile === "function") {
-  for (const envPath of [".env", "../../.env", "../../../.env"]) {
-    const resolved = resolve(process.cwd(), envPath);
-    if (existsSync(resolved)) {
-      try {
-        process.loadEnvFile(resolved);
-        if (process.env.DATABASE_URL) break;
-      } catch {}
-    }
-  }
-}
 
 const SEED_HOLIDAYS = [
   { id: "hol_2026_rep_day", state: "ALL", date: "2026-01-26", name: "Republic Day" },

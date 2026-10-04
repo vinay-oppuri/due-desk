@@ -1,9 +1,14 @@
-import { getSessionCookie } from 'better-auth/cookies';
-import { NextRequest, NextResponse } from 'next/server';
+import { getSessionCookie } from "better-auth/cookies";
+import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(request: NextRequest) {
-  if (!getSessionCookie(request)) return NextResponse.redirect(new URL('/', request.url));
+  const sessionCookie = getSessionCookie(request);
+  if (!sessionCookie) {
+    return NextResponse.redirect(new URL("/auth", request.url));
+  }
   return NextResponse.next();
 }
 
-export const config = { matcher: ['/dashboard/:path*'] };
+export const config = {
+  matcher: ["/dashboard/:path*", "/calendar/:path*", "/filings/:path*"],
+};

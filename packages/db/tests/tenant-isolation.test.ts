@@ -1,20 +1,5 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { sql } from "../src/client.js";
-
-// Load .env
-if (!process.env.DATABASE_URL && typeof process.loadEnvFile === "function") {
-  for (const envPath of [".env", "../../.env", "../../../.env"]) {
-    const resolved = resolve(process.cwd(), envPath);
-    if (existsSync(resolved)) {
-      try {
-        process.loadEnvFile(resolved);
-        if (process.env.DATABASE_URL) break;
-      } catch {}
-    }
-  }
-}
 
 describe("Tenant Isolation via Postgres Row Level Security (RLS)", () => {
   const orgA = `test_org_a_${Date.now()}`;
