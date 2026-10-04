@@ -236,8 +236,11 @@ importers:
         specifier: ^24.0.0
         version: 24.19.1
       drizzle-kit:
-        specifier: ^0.31.8
+        specifier: ^0.31.11
         version: 0.31.11
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@types/node@24.19.1)(@vitest/coverage-v8@4.1.11)(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
   packages/eslint-config:
     devDependencies:
@@ -7921,7 +7924,7 @@ snapshots:
 
   magic-string@0.30.21:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   magic-string@1.4.1:
     dependencies:

@@ -106,7 +106,7 @@ Create via migrations; names may be adjusted to existing conventions.
 Tick when the step's `Skip if` check passes or the work is merged. Add evidence after each tick.
 
 - [ ] P0 Baseline and tooling
-- [ ] P1 Database and migrations
+- [x] P1 Database and migrations (19 tables with indexes migrated to Neon via db/migrations, RLS enabled on all 9 tenant tables, db/seeds loaded idempotently, vitest tenant isolation test passed)
 - [ ] P2 Auth and tenancy
 - [ ] P3 Rules engine and seed data
 - [ ] P4 Core app (onboarding, calendar, filing status)

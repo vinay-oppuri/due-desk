@@ -17,8 +17,10 @@
         "build": "tsc -p tsconfig.json",
         "check-types": "tsc -p tsconfig.json --noEmit",
         "db:generate": "drizzle-kit generate",
-        "db:migrate": "drizzle-kit migrate",
-        "db:studio": "drizzle-kit studio"
+        "db:migrate": "node dist/migrate.js",
+        "db:seed": "node ../../db/seeds/index.ts",
+        "db:studio": "drizzle-kit studio",
+        "test": "vitest run"
     },
     "dependencies": {
         "@neondatabase/serverless": "^1.2.0",
@@ -28,6 +30,7 @@
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^24.0.0",
-        "drizzle-kit": "^0.31.8"
+        "drizzle-kit": "^0.31.11",
+        "vitest": "^4.1.11"
     }
 }
