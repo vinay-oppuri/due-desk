@@ -107,7 +107,7 @@ Tick when the step's `Skip if` check passes or the work is merged. Add evidence 
 
 - [ ] P0 Baseline and tooling
 - [x] P1 Database and migrations (19 tables with indexes migrated to Neon via db/migrations, RLS enabled on all 9 tenant tables, db/seeds loaded idempotently, vitest tenant isolation test passed)
-- [ ] P2 Auth and tenancy
+- [x] P2 Auth and tenancy (Better Auth in own DB on Neon Postgres, auto-provisioned organization & owner membership on signup, RBAC roles helper with owner/accountant/ca/viewer, SessionGuard with tenant resolution, Postgres RLS via withTenantHttp, apps/api e2e test passing 8/8 tests proving cross-tenant isolation and role enforcement)
 - [ ] P3 Rules engine and seed data
 - [ ] P4 Core app (onboarding, calendar, filing status)
 - [ ] P5 Reminder pipeline

@@ -58,3 +58,15 @@
     - `SessionGuard` extracts the session in NestJS, identifies user and active organization, and attaches it to `request.authSession`.
     - NestJS queries the database with `SET LOCAL app.current_org_id = :orgId`, enforcing Postgres RLS policies across all tenant data.
 
+## ADR 005: Tenancy Auto-Provisioning, RBAC & Postgres RLS Session Linking (Phase 2)
+- **Date:** 2026-10-05
+- **Context:** To satisfy Phase 2 constraints in `AGENTS.md`, every signup must auto-provision a tenant organization, assign the user as `owner`, enforce role-based access controls across `owner`, `accountant`, `ca`, and `viewer` (read-only), and scope database queries via Postgres Row Level Security.
+- **Decision:**
+  - **Signup Tenancy Hook:** Configured Better Auth `databaseHooks.user.create.after` in `@repo/auth/server` to atomically insert an `organizations` record (`org_<uuid>`) and an `owner` record in `memberships` (`mem_<uuid>`).
+  - **RBAC Roles Helper:** Implemented `packages/auth/src/roles.ts` exporting hierarchy helpers `hasMinimumRole`, `canWrite`, `canFileObligation`, and `canManageMembers`.
+  - **NestJS Auth Guards:**
+    - `SessionGuard`: Validates session token, resolves user's membership and active organization (handling optional `x-organization-id` header), and sets `request.organizationId` and `request.userRole`.
+    - `RolesGuard` & `@Roles(...)` decorator: Enforces endpoint-level permissions based on membership role.
+  - **Postgres RLS Session Linking:** Implemented `withTenantHttp` in `@repo/db` to execute queries inside an atomic transaction batch with `SET LOCAL ROLE app_user` and `SET LOCAL app.current_org_id = :orgId`, guaranteeing strict tenant isolation without connection pool leakage.
+  - **Verification:** Verified via `apps/api/test/auth-tenancy.e2e-spec.ts` with 8 passing e2e tests covering auto-provisioning, unauthenticated rejection, cross-tenant isolation, cross-tenant header spoofing rejection (403), and viewer write denial (403).
+
