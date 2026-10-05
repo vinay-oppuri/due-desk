@@ -1,6 +1,7 @@
 # Architecture & Implementation Decisions
 
 ## ADR 001: Database Schema & Migration Tooling (Phase 1)
+
 - **Date:** 2026-10-04
 - **Context:** `AGENTS.md` mandates a multi-tenant schema with strict tenant isolation via Postgres Row Level Security (RLS), custom indexes, and reproducible forward-only migrations.
 - **Decision:**
@@ -13,6 +14,7 @@
   - Implemented automated cross-tenant isolation test in `packages/db/tests/tenant-isolation.test.ts`.
 
 ## ADR 002: Modular Schema File Structure
+
 - **Date:** 2026-10-04
 - **Context:** Large monolithic `schema.ts` file becomes difficult to maintain as domain complexity expands across authentication, business profiles, obligations, rules, filings, reminders, and billing.
 - **Decision:**
@@ -33,6 +35,7 @@
   - Retained `packages/db/src/schema.ts` as a transparent re-export of `schema/index.js` to preserve backward compatibility across all consumers.
 
 ## ADR 003: Neon Managed Better Auth Client & Web Integration
+
 - **Date:** 2026-10-04
 - **Context:** Neon provides a managed Better Auth engine storing sessions and users in the `neon_auth` PostgreSQL schema. `apps/web` needs authentication without CORS or third-party cookie blocking issues.
 - **Decision:**
@@ -42,6 +45,7 @@
   - Implemented a rich, responsive authentication UI at `apps/web/app/auth/page.tsx` supporting Sign In, Sign Up, quick-fill sample user, and real-time session status.
 
 ## ADR 004: Unified Better Auth in Own DB & Same-Origin Data Fetching Architecture
+
 - **Date:** 2026-10-04
 - **Context:** Phase 2 requires deciding between Neon Managed Auth vs Better Auth in own DB (Postgres public schema). Managing auth in a separate `neon_auth` schema introduced cross-schema foreign key impedance, external HTTPS round-trip overhead, and prevented NestJS `apps/api` from performing direct low-latency session verification.
 - **Decision:**
@@ -59,6 +63,7 @@
     - NestJS queries the database with `SET LOCAL app.current_org_id = :orgId`, enforcing Postgres RLS policies across all tenant data.
 
 ## ADR 005: Tenancy Auto-Provisioning, RBAC & Postgres RLS Session Linking (Phase 2)
+
 - **Date:** 2026-10-05
 - **Context:** To satisfy Phase 2 constraints in `AGENTS.md`, every signup must auto-provision a tenant organization, assign the user as `owner`, enforce role-based access controls across `owner`, `accountant`, `ca`, and `viewer` (read-only), and scope database queries via Postgres Row Level Security.
 - **Decision:**
@@ -70,3 +75,17 @@
   - **Postgres RLS Session Linking:** Implemented `withTenantHttp` in `@repo/db` to execute queries inside an atomic transaction batch with `SET LOCAL ROLE app_user` and `SET LOCAL app.current_org_id = :orgId`, guaranteeing strict tenant isolation without connection pool leakage.
   - **Verification:** Verified via `apps/api/test/auth-tenancy.e2e-spec.ts` with 8 passing e2e tests covering auto-provisioning, unauthenticated rejection, cross-tenant isolation, cross-tenant header spoofing rejection (403), and viewer write denial (403).
 
+## ADR 006: Passwordless Email OTP (Resend) & Social Authentication (Google, GitHub)
+
+- **Date:** 2026-10-05
+- **Context:** To improve security, avoid password management overhead, and streamline user onboarding, traditional password authentication was replaced with passwordless Email OTP and social OAuth logins (Google, GitHub).
+- **Decision:**
+  - **Passwordless Auth:** Disabled `emailAndPassword: { enabled: false }` in `@repo/auth/server`.
+  - **Email OTP Plugin:** Integrated Better Auth `emailOTP` plugin configured for 6-digit codes expiring in 5 minutes (300 seconds), utilizing the `verification` table in Postgres.
+  - **Resend Delivery & Dev Fallback:** Implemented `sendOtpEmail` in `packages/auth/src/email.ts` utilizing the Resend HTTP API. In local development or when `RESEND_API_KEY` is unset, the code is prominently printed to stdout with a clear header for zero friction.
+  - **Social Authentication:** Configured Google and GitHub OAuth providers in Better Auth `socialProviders`, populated conditionally from `@repo/env` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`).
+  - **Client & UI Integration:**
+    - Integrated `emailOTPClient()` into `@repo/auth/client`.
+    - Redesigned `apps/web/app/auth/page.tsx` into a modern 2-step OTP entry experience with 6 individual digit input boxes, automatic focus progression, a 60-second resend cooldown timer, and branded Google and GitHub action buttons.
+  - **Tenant Auto-Provisioning Invariant:** Verified that both OTP sign-in and Social sign-in seamlessly trigger the `databaseHooks.user.create.after` hook, creating an organization and owner membership on initial login.
+  - **Test Suite Updates:** Updated `apps/api/test/auth-tenancy.e2e-spec.ts` to sign in test users via OTP flow, with all 8 e2e tests passing and confirming cross-tenant isolation and role enforcement.

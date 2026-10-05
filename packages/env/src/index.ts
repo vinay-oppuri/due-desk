@@ -20,7 +20,10 @@ function findMonorepoRoot(startDir = process.cwd()): string {
 }
 
 // Automatically load root .env if running in Node environment
-if (typeof process !== "undefined" && typeof process.loadEnvFile === "function") {
+if (
+  typeof process !== "undefined" &&
+  typeof process.loadEnvFile === "function"
+) {
   const root = findMonorepoRoot();
   const rootEnvPath = resolve(root, ".env");
   if (existsSync(rootEnvPath)) {
@@ -37,18 +40,21 @@ if (typeof process !== "undefined" && typeof process.loadEnvFile === "function")
  */
 const envSchema = z.object({
   // Runtime
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   PORT: z.coerce.number().default(4000),
 
   // Database (Neon Postgres)
   DATABASE_URL: z.string().min(1, {
-    message: "DATABASE_URL is required to connect to Postgres. Provide it in .env at monorepo root.",
+    message:
+      "DATABASE_URL is required to connect to Postgres. Provide it in .env at monorepo root.",
   }),
 
   // Better Auth
-  BETTER_AUTH_SECRET: z.string().default(
-    "dev-secret-key-at-least-32-chars-long-for-compliance-tracker"
-  ),
+  BETTER_AUTH_SECRET: z
+    .string()
+    .default("dev-secret-key-at-least-32-chars-long-for-compliance-tracker"),
   BETTER_AUTH_URL: z.string().default("http://localhost:3000"),
   BETTER_AUTH_TRUSTED_ORIGINS: z
     .string()
@@ -57,7 +63,7 @@ const envSchema = z.object({
       val
         .split(",")
         .map((s) => s.trim())
-        .filter(Boolean)
+        .filter(Boolean),
     ),
 
   // API & Gateway
@@ -65,8 +71,17 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().default("http://localhost:3000"),
   NEXT_PUBLIC_API_URL: z.string().default("http://localhost:3000"),
 
-  // Optional future phase variables
+  // Email & Resend
   RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default("DueDesk <onboarding@resend.dev>"),
+
+  // OAuth Social Providers
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+
+  // Storage & Payments (Future Phases)
   R2_ACCOUNT_ID: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
@@ -84,7 +99,11 @@ function createEnv() {
       .map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`)
       .join("\n");
 
-    console.error("\n❌ [ENV VALIDATION ERROR] Invalid or missing environment configuration:\n" + errorDetails + "\n");
+    console.error(
+      "\n❌ [ENV VALIDATION ERROR] Invalid or missing environment configuration:\n" +
+        errorDetails +
+        "\n",
+    );
     throw new Error("Invalid environment configuration. Check logs above.");
   }
 

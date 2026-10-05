@@ -28,13 +28,16 @@ export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, { fields: [account.userId], references: [user.id] }),
 }));
 
-export const organizationRelations = relations(organizations, ({ many, one }) => ({
-  memberships: many(memberships),
-  businesses: many(businesses),
-  obligations: many(obligations),
-  subscription: one(subscriptions),
-  invoices: many(invoices),
-}));
+export const organizationRelations = relations(
+  organizations,
+  ({ many, one }) => ({
+    memberships: many(memberships),
+    businesses: many(businesses),
+    obligations: many(obligations),
+    subscription: one(subscriptions),
+    invoices: many(invoices),
+  }),
+);
 
 export const membershipRelations = relations(memberships, ({ one }) => ({
   organization: one(organizations, {
@@ -55,12 +58,15 @@ export const businessRelations = relations(businesses, ({ one, many }) => ({
   obligations: many(obligations),
 }));
 
-export const complianceRuleRelations = relations(complianceRules, ({ many }) => ({
-  conditions: many(ruleConditions),
-  overrides: many(ruleOverrides),
-  obligations: many(obligations),
-  auditLogs: many(ruleAuditLog),
-}));
+export const complianceRuleRelations = relations(
+  complianceRules,
+  ({ many }) => ({
+    conditions: many(ruleConditions),
+    overrides: many(ruleOverrides),
+    obligations: many(obligations),
+    auditLogs: many(ruleAuditLog),
+  }),
+);
 
 export const obligationRelations = relations(obligations, ({ one, many }) => ({
   organization: one(organizations, {

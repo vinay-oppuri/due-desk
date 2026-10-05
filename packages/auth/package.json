@@ -5,15 +5,15 @@
   "type": "module",
   "exports": {
     "./server": {
-      "types": "./dist/server.d.ts",
+      "types": "./src/server.ts",
       "default": "./dist/server.js"
     },
     "./client": {
-      "types": "./dist/client.d.ts",
+      "types": "./src/client.ts",
       "default": "./dist/client.js"
     },
     "./roles": {
-      "types": "./dist/roles.d.ts",
+      "types": "./src/roles.ts",
       "default": "./dist/roles.js"
     }
   },
@@ -25,7 +25,9 @@
     "@better-auth/drizzle-adapter": "^1.7.7",
     "@repo/db": "workspace:*",
     "@repo/env": "workspace:*",
-    "better-auth": "^1.7.7"
+    "better-auth": "^1.7.7",
+    "resend": "^6.32.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

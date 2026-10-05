@@ -13,5 +13,5 @@ export const holidays = pgTable(
   (table) => [
     uniqueIndex("holidays_state_date_unique").on(table.state, table.date),
     index("holidays_date_idx").on(table.date),
-  ]
+  ],
 );

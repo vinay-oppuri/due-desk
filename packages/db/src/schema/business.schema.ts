@@ -16,10 +16,11 @@ export const businesses = pgTable(
     hasEmployees: boolean("has_employees").default(false).notNull(),
     gstin: text("gstin"),
     panLast4: text("pan_last4"),
-    registrations: jsonb("registrations").$type<Record<string, any>>().default({}).notNull(),
+    registrations: jsonb("registrations")
+      .$type<Record<string, any>>()
+      .default({})
+      .notNull(),
     ...timestamps,
   },
-  (table) => [
-    index("businesses_organization_id_idx").on(table.organizationId),
-  ]
+  (table) => [index("businesses_organization_id_idx").on(table.organizationId)],
 );

@@ -28,7 +28,10 @@ export default function Home() {
 
       {/* Statutory disclaimer */}
       <footer className="text-center text-[11px] font-mono text-neutral-600 pb-4">
-        <p>Reminder tool, not tax advice. Verify dates with the official portal or your CA.</p>
+        <p>
+          Reminder tool, not tax advice. Verify dates with the official portal
+          or your CA.
+        </p>
       </footer>
     </main>
   );

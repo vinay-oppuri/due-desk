@@ -4,15 +4,47 @@ import { db, memberships, organizations } from "@repo/db";
 import * as schema from "@repo/db/schema";
 import { env } from "@repo/env";
 import { betterAuth } from "better-auth";
+import { emailOTP } from "better-auth/plugins";
+import { sendOtpEmail } from "./email.js";
 
 export * from "./roles.js";
+export { sendOtpEmail, getLatestOtpForTesting } from "./email.js";
+
+const socialProvidersConfig: Record<
+  string,
+  { clientId: string; clientSecret: string }
+> = {};
+
+if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
+  socialProvidersConfig.google = {
+    clientId: env.GOOGLE_CLIENT_ID,
+    clientSecret: env.GOOGLE_CLIENT_SECRET,
+  };
+}
+
+if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+  socialProvidersConfig.github = {
+    clientId: env.GITHUB_CLIENT_ID,
+    clientSecret: env.GITHUB_CLIENT_SECRET,
+  };
+}
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: env.BETTER_AUTH_TRUSTED_ORIGINS,
-  emailAndPassword: { enabled: true, requireEmailVerification: false },
+  emailAndPassword: { enabled: false },
+  socialProviders: socialProvidersConfig,
+  plugins: [
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 300, // 5 minutes
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        await sendOtpEmail({ email, otp, type });
+      },
+    }),
+  ],
   databaseHooks: {
     user: {
       create: {

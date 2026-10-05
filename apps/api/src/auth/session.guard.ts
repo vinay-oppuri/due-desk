@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { auth, type MemberRole } from '@repo/auth/server';
 import { and, eq, db, memberships } from '@repo/db';
 import { fromNodeHeaders } from 'better-auth/node';
@@ -14,13 +20,19 @@ export type AuthenticatedRequest = Request & {
 export class SessionGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
-    if (!session?.user) throw new UnauthorizedException('Authentication required');
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(request.headers),
+    });
+    if (!session?.user)
+      throw new UnauthorizedException('Authentication required');
 
     request.authSession = session;
 
     // Check for explicit organization header or resolve primary membership
-    const requestedOrgId = (request.headers['x-organization-id'] as string) || (session.session as { activeOrganizationId?: string }).activeOrganizationId;
+    const requestedOrgId =
+      (request.headers['x-organization-id'] as string) ||
+      (session.session as { activeOrganizationId?: string })
+        .activeOrganizationId;
 
     const [userMembership] = await db
       .select({
@@ -30,8 +42,11 @@ export class SessionGuard implements CanActivate {
       .from(memberships)
       .where(
         requestedOrgId
-          ? and(eq(memberships.userId, session.user.id), eq(memberships.organizationId, requestedOrgId))
-          : eq(memberships.userId, session.user.id)
+          ? and(
+              eq(memberships.userId, session.user.id),
+              eq(memberships.organizationId, requestedOrgId),
+            )
+          : eq(memberships.userId, session.user.id),
       )
       .limit(1);
 

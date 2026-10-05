@@ -9,8 +9,6 @@ Read `docs/README.md` inside that installed package first, then read the relevan
 This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
 <!-- END:turborepo-agent-rules -->
 
-
-
 Instructions for AI coding agents working on **Compliance Tracker**: a deadline-first compliance calendar for small businesses in India (GST, TDS, PF/ESI, Professional Tax, ROC). Read this whole file before changing anything.
 
 ---
@@ -37,34 +35,34 @@ Instructions for AI coding agents working on **Compliance Tracker**: a deadline-
 
 ## 3. Hard constraints
 
-| Constraint | Rule |
-|---|---|
-| Cost | Zero spend. Use free tiers only. Never add a paid service or a dependency that requires a card. Flag anything that would. |
-| No LLM | No AI/LLM calls anywhere in the running product. Everything is rule-based. |
-| Secrets | Never commit secrets. Provide `.env.example` with names only. |
-| Portal credentials | Never ask for or store GST/Income Tax/MCA portal logins. |
-| Money | Payments only via Razorpay hosted checkout and verified webhooks. Never touch card data. |
-| Time | Store timestamps in UTC. Store due dates as `date`. Display in IST. Cron schedules are UTC. |
-| Idempotency | Every background job and webhook handler must be safe to run twice. |
-| Rules are data | Due-date logic lives in database rows with versions, never hardcoded in application code. |
-| Tenant isolation | Every tenant-owned table has `organization_id`, enforced with Postgres row-level security. |
+| Constraint         | Rule                                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Cost               | Zero spend. Use free tiers only. Never add a paid service or a dependency that requires a card. Flag anything that would. |
+| No LLM             | No AI/LLM calls anywhere in the running product. Everything is rule-based.                                                |
+| Secrets            | Never commit secrets. Provide `.env.example` with names only.                                                             |
+| Portal credentials | Never ask for or store GST/Income Tax/MCA portal logins.                                                                  |
+| Money              | Payments only via Razorpay hosted checkout and verified webhooks. Never touch card data.                                  |
+| Time               | Store timestamps in UTC. Store due dates as `date`. Display in IST. Cron schedules are UTC.                               |
+| Idempotency        | Every background job and webhook handler must be safe to run twice.                                                       |
+| Rules are data     | Due-date logic lives in database rows with versions, never hardcoded in application code.                                 |
+| Tenant isolation   | Every tenant-owned table has `organization_id`, enforced with Postgres row-level security.                                |
 
 ---
 
 ## 4. Stack (defaults; keep existing choices if already present)
 
-| Concern | Choice | Notes |
-|---|---|---|
-| Database | Neon Postgres (free plan) | Region chosen by human; Singapore was proposed. Free restore window is short, so external backups are required. |
-| Backend / cron | Neon Functions (Node.js) with Function Triggers | Cron is UTC, 5-field. Scheduled calls arrive unauthenticated: keep handlers idempotent. Read the Neon Functions docs before writing handlers; do not guess the handler API. |
-| Auth | Neon Auth (managed Better Auth) or Better Auth in own DB | Either is acceptable. Pick one in Phase 2 and record it in `docs/decisions.md`. |
-| Frontend | Existing framework if any; otherwise a lightweight SSR/static framework suitable for SEO pages plus an app shell | Hosted on Cloudflare Pages. |
-| Documents | Cloudflare R2, private bucket, presigned URLs | Do **not** use Neon Object Storage for production documents while it is beta. Do **not** use public file URLs. |
-| Email | Resend (free: 3,000/month, 100/day) | Pauses when quota is hit. See budget guard in Phase 5. |
-| Free extra channels | `.ics` calendar feed, in-app notifications, optional Telegram bot | WhatsApp/SMS are paid per message: paid-plan feature only, built late. |
-| Payments | Razorpay | Percentage fee per transaction, no upfront cost. |
-| Backups | GitHub Actions weekly `pg_dump` to R2 | Restore tested quarterly. |
-| Tests | Whatever exists; otherwise Vitest | Rules engine needs the heaviest coverage. |
+| Concern             | Choice                                                                                                           | Notes                                                                                                                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Database            | Neon Postgres (free plan)                                                                                        | Region chosen by human; Singapore was proposed. Free restore window is short, so external backups are required.                                                             |
+| Backend / cron      | Neon Functions (Node.js) with Function Triggers                                                                  | Cron is UTC, 5-field. Scheduled calls arrive unauthenticated: keep handlers idempotent. Read the Neon Functions docs before writing handlers; do not guess the handler API. |
+| Auth                | Neon Auth (managed Better Auth) or Better Auth in own DB                                                         | Either is acceptable. Pick one in Phase 2 and record it in `docs/decisions.md`.                                                                                             |
+| Frontend            | Existing framework if any; otherwise a lightweight SSR/static framework suitable for SEO pages plus an app shell | Hosted on Cloudflare Pages.                                                                                                                                                 |
+| Documents           | Cloudflare R2, private bucket, presigned URLs                                                                    | Do **not** use Neon Object Storage for production documents while it is beta. Do **not** use public file URLs.                                                              |
+| Email               | Resend (free: 3,000/month, 100/day)                                                                              | Pauses when quota is hit. See budget guard in Phase 5.                                                                                                                      |
+| Free extra channels | `.ics` calendar feed, in-app notifications, optional Telegram bot                                                | WhatsApp/SMS are paid per message: paid-plan feature only, built late.                                                                                                      |
+| Payments            | Razorpay                                                                                                         | Percentage fee per transaction, no upfront cost.                                                                                                                            |
+| Backups             | GitHub Actions weekly `pg_dump` to R2                                                                            | Restore tested quarterly.                                                                                                                                                   |
+| Tests               | Whatever exists; otherwise Vitest                                                                                | Rules engine needs the heaviest coverage.                                                                                                                                   |
 
 ### Suggested layout (adapt to the repo)
 
@@ -128,6 +126,7 @@ Tick when the step's `Skip if` check passes or the work is merged. Add evidence 
 **Skip if:** `package.json` exists, `npm run build` (or equivalent) and the test command succeed, and `.env.example` exists.
 
 Tasks:
+
 1. Audit the repo: framework, package manager, lint/test setup. Write findings to `docs/decisions.md`.
 2. Add missing scripts: `build`, `lint`, `test`, `typecheck`.
 3. Add `.env.example` listing (names only): `DATABASE_URL`, `RESEND_API_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `APP_BASE_URL`.
@@ -147,6 +146,7 @@ Done when: CI is green on an empty change.
 **Skip if:** a migration directory exists and `grep -R "compliance_rules" db/migrations` and `grep -R "ROW LEVEL SECURITY" db/migrations` both match, and migrations apply cleanly to an empty database.
 
 Tasks:
+
 1. Choose a migration tool (keep the existing one). Make migrations forward-only and idempotent to run.
 2. Create all tables from section 5 with foreign keys, the two unique constraints noted there, and `created_at/updated_at`.
 3. Add indexes: `obligations(organization via business, due_date)`, `obligations(business_id, status)`, `reminders(state, send_at)`.
@@ -164,6 +164,7 @@ Done when: a fresh database migrates, seeds, and the cross-tenant isolation test
 **Skip if:** login works end to end in a dev environment and `memberships` rows are created on signup.
 
 Tasks:
+
 1. Pick the auth approach and record it in `docs/decisions.md`.
 2. Email + password or email OTP login. Short-lived sessions. Rate-limit auth endpoints.
 3. On signup create an `organization` and an `owner` membership.
@@ -182,6 +183,7 @@ Done when: two users in different orgs cannot see each other's data in an integr
 **Skip if:** `packages/rules` (or equivalent) exists with passing tests for the cases below **and** seeded rules exist in the database.
 
 Tasks:
+
 1. Implement pure functions with no database or network access:
    - `matchRules(profile, rules) -> rules[]`
    - `computeDueDate(rule, period, holidays, overrides) -> date`
@@ -195,16 +197,17 @@ Tasks:
 
 Starting rule candidates (**unverified, confirm every one against the official source before marking `verified = true`**):
 
-| Area | Candidate rules to seed |
-|---|---|
-| GST | GSTR-1 (monthly and quarterly/QRMP variants), GSTR-3B (monthly and QRMP variants), annual return |
-| TDS | Monthly TDS/TCS deposit, quarterly TDS returns (24Q/26Q), TDS certificates |
-| Payroll | PF monthly payment and return, ESI monthly contribution |
-| State | Professional Tax (monthly or annual depending on state; seed per state, starting with Karnataka, Maharashtra, Tamil Nadu, West Bengal, Telangana) |
-| Income tax | Advance tax installments, ITR due dates by assessee type |
-| ROC | AOC-4 and MGT-7 (relative to AGM date), DIR-3 KYC, ADT-1 |
+| Area       | Candidate rules to seed                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GST        | GSTR-1 (monthly and quarterly/QRMP variants), GSTR-3B (monthly and QRMP variants), annual return                                                  |
+| TDS        | Monthly TDS/TCS deposit, quarterly TDS returns (24Q/26Q), TDS certificates                                                                        |
+| Payroll    | PF monthly payment and return, ESI monthly contribution                                                                                           |
+| State      | Professional Tax (monthly or annual depending on state; seed per state, starting with Karnataka, Maharashtra, Tamil Nadu, West Bengal, Telangana) |
+| Income tax | Advance tax installments, ITR due dates by assessee type                                                                                          |
+| ROC        | AOC-4 and MGT-7 (relative to AGM date), DIR-3 KYC, ADT-1                                                                                          |
 
 Rules for the agent:
+
 - Never present these as authoritative. Every rule needs `source_url`. Leave `verified = false` until a human reviews it.
 - Unverified rules must be hidden from paying users or shown with a clear "pending verification" label. Decide and document in `docs/decisions.md`.
 
@@ -221,6 +224,7 @@ Done when: engine tests pass and seed loads at least the starting set.
 **Skip if:** onboarding, calendar, and status-change screens exist and work against the real database.
 
 Tasks:
+
 1. Onboarding wizard: business type, state, turnover bracket, employees, registrations (GST, PF, ESI, PT). Save to `businesses`.
 2. On save, call `generateObligations` and store results.
 3. Calendar views: month list and upcoming 30 days. Colour by status (pending, due soon, late, filed). Do not rely on colour alone.
@@ -240,6 +244,7 @@ Done when: a new user can sign up, onboard a sample business, see correct dates 
 **Skip if:** an outbox-style `reminders` flow exists, a scheduled Neon Function trigger is deployed (`neon triggers list` shows it), and a send-and-log test passes.
 
 Design (do not change without recording a decision):
+
 - **Outbox in Postgres.** No separate queue service. Reminders are rows with state.
 - **Scheduling:** when obligations are generated, insert reminders for offsets 7, 3, and 1 days before due date, per channel, using the unique key `(obligation_id, channel, offset_days)`.
 - **Scan function (Neon Function + cron Function Trigger):**
@@ -271,6 +276,7 @@ Done when: in a staging environment a reminder for a test obligation arrives onc
 **Skip if:** uploads go to a private R2 bucket via presigned URLs and downloads use short-lived signed URLs, with a passing authorization test.
 
 Tasks:
+
 1. Private R2 bucket; no public access.
 2. Upload flow: API authorizes (role + org), returns a presigned PUT URL (short expiry), client uploads directly, then confirms; store `r2_key`, size, checksum in `documents`.
 3. Download flow: authorize, then return a short-lived presigned GET URL.
@@ -292,6 +298,7 @@ Tests: a user from another organization cannot get a URL; expired URLs fail.
 **Skip if:** each item below is already implemented and documented in `docs/runbook.md`.
 
 Tasks:
+
 1. **Backups:** GitHub Actions weekly `pg_dump` to R2 (encrypted if possible), keep the last several. Add a restore script and document a restore drill; run the drill quarterly.
 2. **Usage monitor:** a daily job that reports Resend sends, database compute hours, and R2 storage, and alerts at 70%.
 3. **Error tracking and uptime:** use free tiers of an error tracker and an uptime monitor. Add a public status page if free.
@@ -313,6 +320,7 @@ Done when: a restore drill succeeds into a fresh database and an induced failure
 **Skip if:** Razorpay checkout, verified webhooks, and plan checks exist and are tested in test mode.
 
 Tasks:
+
 1. Plans (adjust with the human): Free (1 business, email + `.ics`), Standard (more businesses, document vault, WhatsApp/SMS when available), Pro (team access, multi-business).
 2. Razorpay hosted checkout and subscriptions; **webhooks are the source of truth**, verified by signature, idempotent by event id.
 3. Grace period after a failed renewal so reminders are not cut off right before a deadline.
@@ -333,6 +341,7 @@ Done when: test-mode payment upgrades a plan, a replayed webhook changes nothing
 **Skip if:** a firm can bulk-add clients and view a cross-client deadline board.
 
 Tasks:
+
 1. Firm organization with many `businesses`; staff members with roles.
 2. Bulk import clients from CSV with validation and a dry-run preview.
 3. Cross-client board: deadlines this week, overdue items, filter by form, state, assignee.
@@ -349,6 +358,7 @@ Done when: a test firm with 200 generated clients loads the board quickly and pa
 **Skip if:** every item is checked in `docs/launch-checklist.md`.
 
 Tasks:
+
 1. SEO pages: "GST due dates this month", "TDS due dates", "ROC filing deadlines" generated from the same rules data, with last-verified dates shown.
 2. Legal pages: privacy policy, terms, refund policy, and the not-tax-advice disclaimer.
 3. DPDP readiness: consent record at signup, data export, and account deletion that also removes stored documents.

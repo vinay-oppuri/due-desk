@@ -1,4 +1,11 @@
-import { boolean, index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { timestamps } from "./common.js";
 
 export const user = pgTable(
@@ -12,7 +19,7 @@ export const user = pgTable(
     phone: text("phone"),
     ...timestamps,
   },
-  (table) => [uniqueIndex("user_email_unique").on(table.email)]
+  (table) => [uniqueIndex("user_email_unique").on(table.email)],
 );
 
 export const session = pgTable(
@@ -31,7 +38,7 @@ export const session = pgTable(
   (table) => [
     uniqueIndex("session_token_unique").on(table.token),
     index("session_user_id_idx").on(table.userId),
-  ]
+  ],
 );
 
 export const account = pgTable(
@@ -45,8 +52,12 @@ export const account = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
-    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+    }),
     scope: text("scope"),
     idToken: text("id_token"),
     password: text("password"),
@@ -54,8 +65,11 @@ export const account = pgTable(
   },
   (table) => [
     index("account_user_id_idx").on(table.userId),
-    uniqueIndex("account_provider_account_unique").on(table.providerId, table.accountId),
-  ]
+    uniqueIndex("account_provider_account_unique").on(
+      table.providerId,
+      table.accountId,
+    ),
+  ],
 );
 
 export const verification = pgTable(
@@ -67,5 +81,5 @@ export const verification = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     ...timestamps,
   },
-  (table) => [index("verification_identifier_idx").on(table.identifier)]
+  (table) => [index("verification_identifier_idx").on(table.identifier)],
 );

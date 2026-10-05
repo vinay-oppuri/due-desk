@@ -12,12 +12,12 @@ describe("Tenant Isolation via Postgres Row Level Security (RLS)", () => {
     await sql.transaction([
       sql.query("SET LOCAL app.bypass_rls = 'on'"),
       sql.query(
-        `INSERT INTO organizations (id, name, type) VALUES ('${orgA}', 'Org Alpha', 'business'), ('${orgB}', 'Org Beta', 'business')`
+        `INSERT INTO organizations (id, name, type) VALUES ('${orgA}', 'Org Alpha', 'business'), ('${orgB}', 'Org Beta', 'business')`,
       ),
       sql.query(
         `INSERT INTO businesses (id, organization_id, name, state, business_type, turnover_bracket) VALUES ` +
           `('${bizA}', '${orgA}', 'Alpha Logistics', 'KA', 'private_limited', 'under_20l'), ` +
-          `('${bizB}', '${orgB}', 'Beta Retail', 'MH', 'proprietorship', 'under_20l')`
+          `('${bizB}', '${orgB}', 'Beta Retail', 'MH', 'proprietorship', 'under_20l')`,
       ),
     ]);
   });
@@ -39,7 +39,11 @@ describe("Tenant Isolation via Postgres Row Level Security (RLS)", () => {
       sql.query("SELECT id, organization_id, name FROM businesses"),
     ]);
 
-    const rowsA = resA[3] as Array<{ id: string; organization_id: string; name: string }>;
+    const rowsA = resA[3] as Array<{
+      id: string;
+      organization_id: string;
+      name: string;
+    }>;
     expect(rowsA.length).toBe(1);
     expect(rowsA[0]?.id).toBe(bizA);
     expect(rowsA[0]?.organization_id).toBe(orgA);
@@ -54,7 +58,11 @@ describe("Tenant Isolation via Postgres Row Level Security (RLS)", () => {
       sql.query("SELECT id, organization_id, name FROM businesses"),
     ]);
 
-    const rowsB = resB[3] as Array<{ id: string; organization_id: string; name: string }>;
+    const rowsB = resB[3] as Array<{
+      id: string;
+      organization_id: string;
+      name: string;
+    }>;
     expect(rowsB.length).toBe(1);
     expect(rowsB[0]?.id).toBe(bizB);
     expect(rowsB[0]?.organization_id).toBe(orgB);

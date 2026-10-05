@@ -1,4 +1,11 @@
-import { index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { timestamps } from "./common.js";
 import { organizations } from "./organization.schema.js";
 
@@ -18,7 +25,7 @@ export const subscriptions = pgTable(
   },
   (table) => [
     uniqueIndex("subscriptions_organization_unique").on(table.organizationId),
-  ]
+  ],
 );
 
 export const invoices = pgTable(
@@ -38,7 +45,5 @@ export const invoices = pgTable(
     pdfUrl: text("pdf_url"),
     ...timestamps,
   },
-  (table) => [
-    index("invoices_organization_idx").on(table.organizationId),
-  ]
+  (table) => [index("invoices_organization_idx").on(table.organizationId)],
 );

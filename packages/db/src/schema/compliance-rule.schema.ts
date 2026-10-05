@@ -18,7 +18,9 @@ export const complianceRules = pgTable(
     name: text("name").notNull(),
     frequency: text("frequency").notNull(), // monthly | quarterly | annual | event_based
     dueFormula: jsonb("due_formula").$type<Record<string, any>>().notNull(),
-    shiftOnHoliday: text("shift_on_holiday").notNull().default("next_working_day"), // next_working_day | none
+    shiftOnHoliday: text("shift_on_holiday")
+      .notNull()
+      .default("next_working_day"), // next_working_day | none
     effectiveFrom: date("effective_from").notNull(),
     effectiveTo: date("effective_to"),
     version: integer("version").notNull().default(1),
@@ -28,9 +30,7 @@ export const complianceRules = pgTable(
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
     ...timestamps,
   },
-  (table) => [
-    index("compliance_rules_form_code_idx").on(table.formCode),
-  ]
+  (table) => [index("compliance_rules_form_code_idx").on(table.formCode)],
 );
 
 export const ruleConditions = pgTable(
@@ -45,9 +45,7 @@ export const ruleConditions = pgTable(
     value: text("value").notNull(),
     ...timestamps,
   },
-  (table) => [
-    index("rule_conditions_rule_id_idx").on(table.ruleId),
-  ]
+  (table) => [index("rule_conditions_rule_id_idx").on(table.ruleId)],
 );
 
 export const ruleOverrides = pgTable(
@@ -66,7 +64,7 @@ export const ruleOverrides = pgTable(
   },
   (table) => [
     index("rule_overrides_rule_period_idx").on(table.ruleId, table.periodLabel),
-  ]
+  ],
 );
 
 export const ruleAuditLog = pgTable(
@@ -82,7 +80,5 @@ export const ruleAuditLog = pgTable(
     at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
     ...timestamps,
   },
-  (table) => [
-    index("rule_audit_log_rule_idx").on(table.ruleId),
-  ]
+  (table) => [index("rule_audit_log_rule_idx").on(table.ruleId)],
 );

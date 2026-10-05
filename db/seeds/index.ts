@@ -2,14 +2,44 @@ import { db } from "../../packages/db/dist/index.js";
 import { complianceRules, holidays } from "../../packages/db/dist/schema.js";
 
 const SEED_HOLIDAYS = [
-  { id: "hol_2026_rep_day", state: "ALL", date: "2026-01-26", name: "Republic Day" },
-  { id: "hol_2026_ind_day", state: "ALL", date: "2026-08-15", name: "Independence Day" },
-  { id: "hol_2026_gandhi", state: "ALL", date: "2026-10-02", name: "Mahatma Gandhi Jayanti" },
+  {
+    id: "hol_2026_rep_day",
+    state: "ALL",
+    date: "2026-01-26",
+    name: "Republic Day",
+  },
+  {
+    id: "hol_2026_ind_day",
+    state: "ALL",
+    date: "2026-08-15",
+    name: "Independence Day",
+  },
+  {
+    id: "hol_2026_gandhi",
+    state: "ALL",
+    date: "2026-10-02",
+    name: "Mahatma Gandhi Jayanti",
+  },
   { id: "hol_2026_diwali", state: "ALL", date: "2026-11-08", name: "Diwali" },
   { id: "hol_2026_ugadi_ka", state: "KA", date: "2026-03-19", name: "Ugadi" },
-  { id: "hol_2026_rajyotsava_ka", state: "KA", date: "2026-11-01", name: "Kannada Rajyotsava" },
-  { id: "hol_2026_mh_day", state: "MH", date: "2026-05-01", name: "Maharashtra Day" },
-  { id: "hol_2026_ts_form", state: "TS", date: "2026-06-02", name: "Telangana Formation Day" },
+  {
+    id: "hol_2026_rajyotsava_ka",
+    state: "KA",
+    date: "2026-11-01",
+    name: "Kannada Rajyotsava",
+  },
+  {
+    id: "hol_2026_mh_day",
+    state: "MH",
+    date: "2026-05-01",
+    name: "Maharashtra Day",
+  },
+  {
+    id: "hol_2026_ts_form",
+    state: "TS",
+    date: "2026-06-02",
+    name: "Telangana Formation Day",
+  },
   { id: "hol_2026_pongal_tn", state: "TN", date: "2026-01-14", name: "Pongal" },
 ];
 
@@ -86,7 +116,13 @@ const SEED_RULES = [
     formCode: "FORM-24Q",
     name: "Quarterly TDS Return - Salary (24Q)",
     frequency: "quarterly",
-    dueFormula: { type: "quarterly_offset", monthOffset: 1, day: 31, q4MonthOffset: 2, q4Day: 31 },
+    dueFormula: {
+      type: "quarterly_offset",
+      monthOffset: 1,
+      day: 31,
+      q4MonthOffset: 2,
+      q4Day: 31,
+    },
     shiftOnHoliday: "next_working_day",
     effectiveFrom: "2024-01-01",
     effectiveTo: null,
@@ -99,7 +135,13 @@ const SEED_RULES = [
     formCode: "FORM-26Q",
     name: "Quarterly TDS Return - Non-Salary (26Q)",
     frequency: "quarterly",
-    dueFormula: { type: "quarterly_offset", monthOffset: 1, day: 31, q4MonthOffset: 2, q4Day: 31 },
+    dueFormula: {
+      type: "quarterly_offset",
+      monthOffset: 1,
+      day: 31,
+      q4MonthOffset: 2,
+      q4Day: 31,
+    },
     shiftOnHoliday: "next_working_day",
     effectiveFrom: "2024-01-01",
     effectiveTo: null,
@@ -302,7 +344,9 @@ export async function runSeeds() {
         },
       });
   }
-  console.log(`[Seed] Seeded ${SEED_RULES.length} compliance rules (verified = false).`);
+  console.log(
+    `[Seed] Seeded ${SEED_RULES.length} compliance rules (verified = false).`,
+  );
   console.log("[Seed] Seeding completed successfully!");
 }
 

@@ -7,7 +7,10 @@ import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
-  app.enableCors({ origin: env.BETTER_AUTH_TRUSTED_ORIGINS, credentials: true });
+  app.enableCors({
+    origin: env.BETTER_AUTH_TRUSTED_ORIGINS,
+    credentials: true,
+  });
   app.use('/api/auth', toNodeHandler(auth));
   app.use(express.json());
   await app.listen(env.PORT);

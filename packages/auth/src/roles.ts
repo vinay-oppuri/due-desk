@@ -48,7 +48,10 @@ export const ROLES: Record<MemberRole, RoleDefinition> = {
  * Checks if a user's role satisfies the required minimum role in the hierarchy:
  * owner (4) >= accountant (3) >= ca (2) >= viewer (1)
  */
-export function hasMinimumRole(userRole: string, requiredRole: MemberRole): boolean {
+export function hasMinimumRole(
+  userRole: string,
+  requiredRole: MemberRole,
+): boolean {
   const current = ROLES[userRole as MemberRole];
   const required = ROLES[requiredRole];
   if (!current || !required) return false;

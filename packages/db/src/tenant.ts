@@ -15,14 +15,22 @@ export interface TenantContext {
 export async function withTenantHttp<T>(
   context: TenantContext,
   query: string,
-  params: unknown[] = []
+  params: unknown[] = [],
 ): Promise<T[]> {
   const res = await rawNeonSql.transaction([
     rawNeonSql.query("SET LOCAL ROLE app_user"),
-    rawNeonSql.query(`SET LOCAL app.bypass_rls = '${context.bypassRls ? "on" : "off"}'`),
-    rawNeonSql.query(`SET LOCAL app.current_org_id = '${context.organizationId}'`),
+    rawNeonSql.query(
+      `SET LOCAL app.bypass_rls = '${context.bypassRls ? "on" : "off"}'`,
+    ),
+    rawNeonSql.query(
+      `SET LOCAL app.current_org_id = '${context.organizationId}'`,
+    ),
     ...(context.userId
-      ? [rawNeonSql.query(`SET LOCAL app.current_user_id = '${context.userId}'`)]
+      ? [
+          rawNeonSql.query(
+            `SET LOCAL app.current_user_id = '${context.userId}'`,
+          ),
+        ]
       : []),
     rawNeonSql.query(query, params),
   ]);
@@ -36,7 +44,7 @@ export async function withTenantHttp<T>(
  */
 export async function applyTenantRls(
   dbOrTx: DrizzleDB,
-  context: TenantContext
+  context: TenantContext,
 ): Promise<void> {
   const bypass = context.bypassRls ? "on" : "off";
   const userSetting = context.userId
@@ -45,7 +53,7 @@ export async function applyTenantRls(
 
   await dbOrTx.execute(
     sql.raw(
-      `SET LOCAL ROLE app_user; SET LOCAL app.bypass_rls = '${bypass}'; SET LOCAL app.current_org_id = '${context.organizationId}'; ${userSetting}`
-    )
+      `SET LOCAL ROLE app_user; SET LOCAL app.bypass_rls = '${bypass}'; SET LOCAL app.current_org_id = '${context.organizationId}'; ${userSetting}`,
+    ),
   );
 }

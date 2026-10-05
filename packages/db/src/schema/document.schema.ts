@@ -11,17 +11,21 @@ export const documents = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
-    filingId: text("filing_id").references(() => filings.id, { onDelete: "cascade" }),
+    filingId: text("filing_id").references(() => filings.id, {
+      onDelete: "cascade",
+    }),
     r2Key: text("r2_key").notNull(),
     checksum: text("checksum"),
     fileSize: integer("file_size"),
     mimeType: text("mime_type"),
-    uploadedBy: text("uploaded_by").references(() => user.id, { onDelete: "set null" }),
+    uploadedBy: text("uploaded_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
     retainUntil: date("retain_until"),
     ...timestamps,
   },
   (table) => [
     index("documents_filing_idx").on(table.filingId),
     index("documents_organization_idx").on(table.organizationId),
-  ]
+  ],
 );

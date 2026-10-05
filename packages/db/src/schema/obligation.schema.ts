@@ -1,4 +1,11 @@
-import { date, index, integer, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  date,
+  index,
+  integer,
+  pgTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { timestamps } from "./common.js";
 import { organizations } from "./organization.schema.js";
 import { businesses } from "./business.schema.js";
@@ -27,9 +34,12 @@ export const obligations = pgTable(
     uniqueIndex("obligations_business_rule_period_unique").on(
       table.businessId,
       table.ruleId,
-      table.periodLabel
+      table.periodLabel,
     ),
-    index("obligations_org_due_date_idx").on(table.organizationId, table.dueDate),
+    index("obligations_org_due_date_idx").on(
+      table.organizationId,
+      table.dueDate,
+    ),
     index("obligations_business_status_idx").on(table.businessId, table.status),
-  ]
+  ],
 );

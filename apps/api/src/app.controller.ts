@@ -1,8 +1,19 @@
-import { Body, Controller, Get, Inject, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { businesses, withTenantHttp } from '@repo/db';
 import { AppService } from './app.service.js';
-import { SessionGuard, type AuthenticatedRequest } from './auth/session.guard.js';
+import {
+  SessionGuard,
+  type AuthenticatedRequest,
+} from './auth/session.guard.js';
 import { Roles, RolesGuard } from './auth/roles.guard.js';
 import { DRIZZLE, type DrizzleDB } from './drizzle/index.js';
 
@@ -48,7 +59,7 @@ export class AppController {
     // Query businesses with strict Postgres RLS isolation
     const rows = await withTenantHttp(
       { organizationId: orgId, userId: request.authSession?.user?.id },
-      'SELECT id, organization_id, name, state, business_type, turnover_bracket FROM businesses'
+      'SELECT id, organization_id, name, state, business_type, turnover_bracket FROM businesses',
     );
     return rows;
   }
@@ -58,7 +69,13 @@ export class AppController {
   @Roles('owner', 'accountant')
   async createBusiness(
     @Req() request: AuthenticatedRequest,
-    @Body() body: { name: string; state: string; businessType?: string; turnoverBracket?: string },
+    @Body()
+    body: {
+      name: string;
+      state: string;
+      businessType?: string;
+      turnoverBracket?: string;
+    },
   ) {
     const orgId = request.organizationId!;
     const bizId = `biz_${randomUUID().replace(/-/g, '')}`;

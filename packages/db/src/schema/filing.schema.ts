@@ -15,12 +15,14 @@ export const filings = pgTable(
       .notNull()
       .references(() => obligations.id, { onDelete: "cascade" }),
     filedOn: timestamp("filed_on", { withTimezone: true }).notNull(),
-    filedBy: text("filed_by").references(() => user.id, { onDelete: "set null" }),
+    filedBy: text("filed_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
     notes: text("notes"),
     ...timestamps,
   },
   (table) => [
     index("filings_obligation_idx").on(table.obligationId),
     index("filings_organization_idx").on(table.organizationId),
-  ]
+  ],
 );

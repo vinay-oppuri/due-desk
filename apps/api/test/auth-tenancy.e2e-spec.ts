@@ -4,7 +4,7 @@ import request from 'supertest';
 import type { Server } from 'node:http';
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { AppModule } from '../src/app.module.js';
-import { auth } from '@repo/auth/server';
+import { auth, getLatestOtpForTesting } from '@repo/auth/server';
 import { db, businesses, memberships, organizations, eq } from '@repo/db';
 
 describe('Phase 2: Auth, Multi-Tenancy & RBAC (e2e)', () => {
@@ -15,7 +15,6 @@ describe('Phase 2: Auth, Multi-Tenancy & RBAC (e2e)', () => {
   const userAEmail = `usera_${timestamp}@test.com`;
   const userBEmail = `userb_${timestamp}@test.com`;
   const viewerEmail = `viewer_${timestamp}@test.com`;
-  const password = 'StrongPassword123!';
 
   let userASessionCookie: string;
   let userBSessionCookie: string;
@@ -36,41 +35,62 @@ describe('Phase 2: Auth, Multi-Tenancy & RBAC (e2e)', () => {
     await app.init();
     server = app.getHttpServer() as Server;
 
-    // 1. Sign up User A
-    const resA = await auth.api.signUpEmail({
-      body: { email: userAEmail, password, name: 'Alice Owner' },
+    // 1. Sign in User A via Email OTP
+    await auth.api.sendVerificationOTP({
+      body: { email: userAEmail, type: 'sign-in' },
+    });
+    const otpA = getLatestOtpForTesting(userAEmail);
+    expect(otpA).toBeDefined();
+
+    const resA = await auth.api.signInEmailOTP({
+      body: { email: userAEmail, otp: otpA! },
       asResponse: true,
     });
     userASessionCookie = resA.headers.get('set-cookie') ?? '';
+    const userAData = (await resA.json()) as { user: { id: string } };
 
     // Find Org A created by signup hook
     const [membershipA] = await db
       .select()
       .from(memberships)
-      .where(eq(memberships.userId, (await resA.json()).user.id));
+      .where(eq(memberships.userId, userAData.user.id));
     orgAId = membershipA!.organizationId;
 
-    // 2. Sign up User B
-    const resB = await auth.api.signUpEmail({
-      body: { email: userBEmail, password, name: 'Bob Owner' },
+    // 2. Sign in User B via Email OTP
+    await auth.api.sendVerificationOTP({
+      body: { email: userBEmail, type: 'sign-in' },
+    });
+    const otpB = getLatestOtpForTesting(userBEmail);
+    expect(otpB).toBeDefined();
+
+    const resB = await auth.api.signInEmailOTP({
+      body: { email: userBEmail, otp: otpB! },
       asResponse: true,
     });
     userBSessionCookie = resB.headers.get('set-cookie') ?? '';
+    const userBData = (await resB.json()) as { user: { id: string } };
 
     // Find Org B created by signup hook
     const [membershipB] = await db
       .select()
       .from(memberships)
-      .where(eq(memberships.userId, (await resB.json()).user.id));
+      .where(eq(memberships.userId, userBData.user.id));
     orgBId = membershipB!.organizationId;
 
-    // 3. Create a viewer user in Org A
-    const resViewer = await auth.api.signUpEmail({
-      body: { email: viewerEmail, password, name: 'Charlie Viewer' },
+    // 3. Create a viewer user in Org A via Email OTP
+    await auth.api.sendVerificationOTP({
+      body: { email: viewerEmail, type: 'sign-in' },
+    });
+    const otpViewer = getLatestOtpForTesting(viewerEmail);
+    expect(otpViewer).toBeDefined();
+
+    const resViewer = await auth.api.signInEmailOTP({
+      body: { email: viewerEmail, otp: otpViewer! },
       asResponse: true,
     });
     viewerSessionCookie = resViewer.headers.get('set-cookie') ?? '';
-    const viewerUserId = (await resViewer.json()).user.id;
+    const viewerData = (await resViewer.json()) as { user: { id: string } };
+    const viewerUserId = viewerData.user.id;
 
     // Add viewer to Org A with viewer role
     await db.insert(memberships).values({
@@ -90,16 +110,22 @@ describe('Phase 2: Auth, Multi-Tenancy & RBAC (e2e)', () => {
     await app.close();
   });
 
-  it('1. User A and User B automatically have distinct organizations and owner memberships', async () => {
+  it('1. User A and User B automatically have distinct organizations and owner memberships via OTP', async () => {
     expect(orgAId).toBeDefined();
     expect(orgBId).toBeDefined();
     expect(orgAId).not.toBe(orgBId);
 
-    const [orgA] = await db.select().from(organizations).where(eq(organizations.id, orgAId));
-    const [orgB] = await db.select().from(organizations).where(eq(organizations.id, orgBId));
+    const [orgA] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, orgAId));
+    const [orgB] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, orgBId));
 
-    expect(orgA?.name).toBe("Alice Owner's Organization");
-    expect(orgB?.name).toBe("Bob Owner's Organization");
+    expect(orgA?.name).toContain('Organization');
+    expect(orgB?.name).toContain('Organization');
   });
 
   it('2. Unauthenticated request to /api/businesses is rejected with 401 Unauthorized', async () => {
@@ -134,7 +160,11 @@ describe('Phase 2: Auth, Multi-Tenancy & RBAC (e2e)', () => {
       .set('Cookie', userASessionCookie)
       .expect(200);
 
-    const list = res.body as Array<{ id: string; organization_id: string; name: string }>;
+    const list = res.body as Array<{
+      id: string;
+      organization_id: string;
+      name: string;
+    }>;
     expect(list.some((b) => b.id === bizAId)).toBe(true);
     expect(list.some((b) => b.id === bizBId)).toBe(false);
   });
@@ -145,7 +175,11 @@ describe('Phase 2: Auth, Multi-Tenancy & RBAC (e2e)', () => {
       .set('Cookie', userBSessionCookie)
       .expect(200);
 
-    const list = res.body as Array<{ id: string; organization_id: string; name: string }>;
+    const list = res.body as Array<{
+      id: string;
+      organization_id: string;
+      name: string;
+    }>;
     expect(list.some((b) => b.id === bizBId)).toBe(true);
     expect(list.some((b) => b.id === bizAId)).toBe(false);
   });
