@@ -87,5 +87,30 @@
   - **Client & UI Integration:**
     - Integrated `emailOTPClient()` into `@repo/auth/client`.
     - Redesigned `apps/web/app/auth/page.tsx` into a modern 2-step OTP entry experience with 6 individual digit input boxes, automatic focus progression, a 60-second resend cooldown timer, and branded Google and GitHub action buttons.
-  - **Tenant Auto-Provisioning Invariant:** Verified that both OTP sign-in and Social sign-in seamlessly trigger the `databaseHooks.user.create.after` hook, creating an organization and owner membership on initial login.
   - **Test Suite Updates:** Updated `apps/api/test/auth-tenancy.e2e-spec.ts` to sign in test users via OTP flow, with all 8 e2e tests passing and confirming cross-tenant isolation and role enforcement.
+
+## ADR 007: Pure Date & Compliance Rules Engine (Phase 3)
+
+- **Date:** 2026-10-06
+- **Context:** `AGENTS.md` mandates that all due date and statutory obligation logic lives in a pure computational engine decoupled from databases and network calls, with versioned rules and idempotent generation.
+- **Decision:**
+  - **New Package:** Created `@repo/rules` in `packages/rules` with zero external runtime dependencies.
+  - **Core Pure Functions:**
+    - `matchRules(profile, rules, conditions)`: Matches business profiles against compliance rules by checking business type, registrations (GST, QRMP, PF, ESI, PT), employee presence, and state.
+    - `computeDueDate(rule, period, holidays, overrides, eventContext, state)`: Evaluates formula shapes, applies government extension overrides first, and then shifts due dates on weekends/holidays if configured.
+    - `generateObligations(options)`: Outputs dated, versioned, and de-duplicated statutory obligations (`GeneratedObligation`).
+  - **Formula Shapes Supported:**
+    - `fixed_day_next_month` (e.g. GSTR-3B on 20th, TDS Challan with March exception on 30th April).
+    - `fixed_day_same_month` (e.g. mid-month requirements).
+    - `quarterly_offset` (e.g. TDS 24Q/26Q with special Q4 May 31 offset, GSTR-1/3B QRMP).
+    - `annual_fixed_date` (e.g. Advance Tax installments, ITR filings, GSTR-9).
+    - `last_day_next_month` (e.g. Maharashtra PT).
+    - `days_after_event` (e.g. ROC AOC-4 30 days after AGM, MGT-7 60 days after AGM, ADT-1 15 days after AGM).
+  - **Holiday & Weekend Shift Rules:**
+    - Checks Saturday and Sunday weekends.
+    - Matches public holidays by state (`ALL` or matching business's state).
+    - Shifts day-by-day until the next working day.
+  - **Government Extension Overrides:** Applied prior to holiday shifting to guarantee accurate downstream shifting.
+  - **Idempotency & Versioning:** Every generated obligation records `ruleVersion` and enforces unique `(businessId, ruleId, periodLabel)`.
+  - **Seed Data:** Seeded 26 statutory candidate compliance rules, 10 holidays, and 10 rule conditions into Neon Postgres via `db/seeds/index.ts`, all with `verified = false` and official portal `sourceUrl` citations.
+  - **Test Coverage:** 14 unit tests in `packages/rules/tests/rules-engine.test.ts` covering month-end and leap-year boundaries, weekend and holiday shifts, quarterly boundaries, extension overrides, expired rules, and idempotent regeneration.

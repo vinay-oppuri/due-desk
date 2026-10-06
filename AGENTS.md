@@ -103,10 +103,10 @@ Create via migrations; names may be adjusted to existing conventions.
 
 Tick when the step's `Skip if` check passes or the work is merged. Add evidence after each tick.
 
-- [ ] P0 Baseline and tooling
+- [x] P0 Baseline and tooling (monorepo build, lint, test, typecheck working across 10 packages; .env.example created with all secret names)
 - [x] P1 Database and migrations (19 tables with indexes migrated to Neon via db/migrations, RLS enabled on all 9 tenant tables, db/seeds loaded idempotently, vitest tenant isolation test passed)
 - [x] P2 Auth and tenancy (Better Auth in own DB on Neon Postgres, auto-provisioned organization & owner membership on signup, RBAC roles helper with owner/accountant/ca/viewer, SessionGuard with tenant resolution, Postgres RLS via withTenantHttp, apps/api e2e test passing 8/8 tests proving cross-tenant isolation and role enforcement)
-- [ ] P3 Rules engine and seed data
+- [x] P3 Rules engine and seed data (pure @repo/rules engine implemented with matchRules, computeDueDate, generateObligations; 14/14 vitest tests passing edge cases; 26 candidate rules, 10 holidays, and 10 rule conditions seeded idempotently into Neon)
 - [ ] P4 Core app (onboarding, calendar, filing status)
 - [ ] P5 Reminder pipeline
 - [ ] P6 Document vault
