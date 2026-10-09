@@ -223,7 +223,10 @@ export default function DashboardPage() {
               onClick={() =>
                 authClient
                   .signOut()
-                  .then(() => (window.location.href = "/auth"))
+                  .then(
+                    () =>
+                      (window.location.href = `${process.env.NEXT_PUBLIC_WEB_URL || "http://localhost:3000"}/auth`),
+                  )
               }
               className="py-1.5 px-3 text-xs font-mono uppercase text-neutral-500 hover:text-white transition-colors"
             >

@@ -261,3 +261,29 @@
     - Consolidated Weekly Digest preview modal with one-click dispatch.
   - **Verification:** Verified with 9 end-to-end tests in `apps/api/test/ca-workspace.e2e-spec.ts` testing dry-run validation, plan capacity gating, bulk creation, board query and filtering, staff assignment, digest email dispatch, and cross-firm tenant isolation (55/55 e2e tests passing across all 8 suites).
 
+## ADR 014: Architectural Separation of Pre-Login Site (apps/web) and Post-Login Application (apps/app)
+
+- **Date:** 2026-10-09
+- **Context:** To ensure clean separation between public marketing, search engine optimization (SEO), authentication, and the authenticated product application, the frontend is split into two distinct Next.js applications:
+  1. `apps/web`: Public, pre-login site containing marketing landing pages, live statutory calendar reference guides (GST, TDS, ROC), DPDP-compliant legal pages, and authentication.
+  2. `apps/app`: Authenticated workspace containing the compliance calendar dashboard, business onboarding, CA multi-client workspace, billing portal, and admin observability.
+- **Decision:**
+  - **`apps/web` (Pre-Login Web):**
+    - Public landing page (`/`) showcasing core platform features, trust pillars, and live statutory deadline preview table.
+    - SEO statutory calendar pages: `/gst-due-dates` (GSTR-1, GSTR-3B, QRMP), `/tds-due-dates` (Challan 281, 24Q, 26Q), and `/roc-filing-deadlines` (AOC-4, MGT-7, DIR-3 KYC).
+    - Statutory legal pages: `/privacy` (DPDP Act, 2023), `/terms` (mandatory disclaimer), and `/refund` (7-day money-back guarantee).
+    - Authentication (`/auth`): Passwordless email OTP and social login. On successful sign-in, seamlessly redirects the user to `NEXT_PUBLIC_APP_URL/dashboard`.
+    - Proxy middleware in `apps/web`: Automatically redirects any legacy visits to `/dashboard`, `/onboarding`, `/ca-workspace`, `/billing`, or `/admin` over to `apps/app`.
+  - **`apps/app` (Post-Login App):**
+    - Created new dedicated workspace package `app` configured in `pnpm-workspace.yaml` and `turbo.json`.
+    - Protected routes: `/dashboard`, `/onboarding`, `/ca-workspace`, `/billing`, and `/admin`.
+    - Middleware proxy: Intercepts unauthenticated sessions and redirects visitors to `NEXT_PUBLIC_WEB_URL/auth`.
+    - Sign out handler: Revokes Better-Auth session and redirects back to `NEXT_PUBLIC_WEB_URL/auth`.
+  - **Environment Configuration:**
+    - Updated `packages/env` to include port 3002 in default `BETTER_AUTH_TRUSTED_ORIGINS`, with `NEXT_PUBLIC_APP_URL` default to `http://localhost:3002` and `NEXT_PUBLIC_WEB_URL` default to `http://localhost:3000`.
+    - Added `"dev:app": "pnpm --filter app dev"` to root `package.json`.
+  - **Verification:**
+    - Both applications build successfully (`turbo run build` passed 8/8 tasks across 11 packages).
+    - Typecheck passed cleanly (`pnpm check-types`).
+    - Unit tests passed (`pnpm test`).
+

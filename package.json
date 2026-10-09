@@ -8,6 +8,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "dev:web": "pnpm --filter web dev",
+    "dev:app": "pnpm --filter app dev",
     "dev:docs": "pnpm --filter docs dev",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",

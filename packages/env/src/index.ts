@@ -58,7 +58,7 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z.string().default("http://localhost:3000"),
   BETTER_AUTH_TRUSTED_ORIGINS: z
     .string()
-    .default("http://localhost:3000,http://localhost:3001")
+    .default("http://localhost:3000,http://localhost:3001,http://localhost:3002")
     .transform((val) =>
       val
         .split(",")
@@ -68,7 +68,8 @@ const envSchema = z.object({
 
   // API & Gateway
   API_BASE_URL: z.string().default("http://localhost:4000"),
-  NEXT_PUBLIC_APP_URL: z.string().default("http://localhost:3000"),
+  NEXT_PUBLIC_APP_URL: z.string().default("http://localhost:3002"),
+  NEXT_PUBLIC_WEB_URL: z.string().default("http://localhost:3000"),
   NEXT_PUBLIC_API_URL: z.string().default("http://localhost:3000"),
 
   // Email & Resend

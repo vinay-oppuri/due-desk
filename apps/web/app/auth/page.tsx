@@ -121,6 +121,11 @@ function AuthForm() {
         setSuccessMessage(
           "Authenticated successfully! Loading your workspace...",
         );
+        setTimeout(() => {
+          const appUrl =
+            process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
+          window.location.href = `${appUrl}/dashboard`;
+        }, 500);
       }
     } catch (err) {
       setErrorMessage(
@@ -221,12 +226,12 @@ function AuthForm() {
             </div>
 
             <div className="space-y-2">
-              <Link
-                href="/"
+              <a
+                href={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002"}/dashboard`}
                 className="w-full py-2.5 px-4 text-center block text-xs uppercase tracking-wider font-mono font-semibold bg-white text-black hover:bg-neutral-200 border border-white rounded-none transition-colors"
               >
-                Go to Dashboard
-              </Link>
+                Open Workspace Dashboard &rarr;
+              </a>
               <button
                 type="button"
                 onClick={handleSignOut}
