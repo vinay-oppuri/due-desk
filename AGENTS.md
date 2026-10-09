@@ -111,7 +111,7 @@ Tick when the step's `Skip if` check passes or the work is merged. Add evidence 
 - [x] P5 Reminder pipeline (outbox scanner with FOR UPDATE SKIP LOCKED, automatic 7/3/1 day reminder scheduling on obligation generation, Resend free tier budget guard with 90/day cap & 70% alert, exponential retry backoff to dead-letter queue after 5 attempts, daily self-healing watchdog repairing missing reminders, docs/runbook.md created, functions/ standalone Neon triggers created, 20/20 e2e tests passing)
 - [x] P6 Document vault (private Cloudflare R2 bucket integration via presigned PUT/GET URLs, tenant-scoped org keys, 10MB per-file limit, 100MB org storage quota, statutory retainUntil compliance lock, viewer write-protection, 9/9 e2e tests passing)
 - [x] P8 Billing and plan gating (Free/Standard/Pro tiers in @repo/rules, server-side gating on business limits and document vault, Razorpay hosted checkout & HMAC-SHA256 signature verification, idempotent webhook processing via webhook_events, 7-day grace period logic, statutory invoices logging, billing UI at /billing, 10/10 e2e tests passing, 46/46 e2e tests passing monorepo-wide)
-- [ ] P9 CA multi-client workspace
+- [x] P9 CA multi-client workspace (assigned_to column with index in Neon, CSV bulk import with dry-run validation & plan limit checks, master cross-client deadline board with staff assignee & timeframe filters, weekly consolidated email digest to conserve Resend budget, staff task assignment with audit logging, CA workspace UI at /ca-workspace, 9/9 e2e tests passing, 55/55 e2e tests passing monorepo-wide)
 - [ ] P10 Launch readiness (SEO, legal, DPDP)
 
 ---

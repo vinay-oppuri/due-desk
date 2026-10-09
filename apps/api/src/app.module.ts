@@ -9,6 +9,7 @@ import { RemindersModule } from './reminders/reminders.module.js';
 import { DocumentsModule } from './documents/documents.module.js';
 import { ObservabilityModule } from './observability/observability.module.js';
 import { BillingModule } from './billing/billing.module.js';
+import { CaWorkspaceModule } from './ca-workspace/ca-workspace.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { BillingModule } from './billing/billing.module.js';
     DocumentsModule,
     ObservabilityModule,
     BillingModule,
+    CaWorkspaceModule,
   ],
   controllers: [AppController],
   providers: [

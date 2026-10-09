@@ -10,6 +10,7 @@ import { timestamps } from "./common.js";
 import { organizations } from "./organization.schema.js";
 import { businesses } from "./business.schema.js";
 import { complianceRules } from "./compliance-rule.schema.js";
+import { user } from "./user.schema.js";
 
 export const obligations = pgTable(
   "obligations",
@@ -28,6 +29,9 @@ export const obligations = pgTable(
     periodLabel: text("period_label").notNull(),
     dueDate: date("due_date").notNull(),
     status: text("status").notNull().default("pending"), // pending | filed | late | not_applicable
+    assignedTo: text("assigned_to").references(() => user.id, {
+      onDelete: "set null",
+    }),
     ...timestamps,
   },
   (table) => [
@@ -41,5 +45,6 @@ export const obligations = pgTable(
       table.dueDate,
     ),
     index("obligations_business_status_idx").on(table.businessId, table.status),
+    index("obligations_assigned_to_idx").on(table.assignedTo),
   ],
 );

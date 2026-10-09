@@ -15,6 +15,13 @@
       "when": 1791103000000,
       "tag": "0001_webhook_events",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791104000000,
+      "tag": "0002_obligations_assigned_to",
+      "breakpoints": true
     }
   ]
 }

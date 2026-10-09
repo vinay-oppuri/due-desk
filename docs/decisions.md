@@ -241,3 +241,23 @@
     - Statutory invoice history table with payment date, invoice ID, and download links.
   - **Verification:** Verified with 10 passing end-to-end tests in `apps/api/test/billing.e2e-spec.ts` (46/46 e2e tests passing across all 7 suites).
 
+## ADR 013: CA Multi-Client Workspace, Bulk CSV Import & Consolidated Digest (Phase 9)
+
+- **Date:** 2026-10-09
+- **Context:** CA firms in India manage compliance for dozens to hundreds of business clients. They need a single view of all deadlines, the ability to assign tasks to team members, fast client onboarding via CSV, and a single consolidated digest email instead of hundreds of individual alerts to protect Resend free-tier limits.
+- **Decision:**
+  - **Data Model Extensions:**
+    - Added `assigned_to` column (foreign key to `user.id`, ON DELETE SET NULL) and index `obligations_assigned_to_idx` on `obligations` table.
+    - Generated and executed migration `db/migrations/0002_obligations_assigned_to.sql` on Neon Postgres.
+  - **Modular Architecture (`apps/api/src/ca-workspace/`):**
+    - `ca-import.service.ts`: CSV parser with dry-run validation (verifies business type, Indian state, 15-character GSTIN format, and subscription plan limits before importing). Performs fast batch insertion of clients and obligations.
+    - `ca-board.service.ts`: Master cross-client board with summary metrics (`totalClients`, `totalPending`, `dueThisWeek`, `overdueCount`, `filedCount`) and filtering by client, tax form code, state, staff assignee, filing status, and timeframe.
+    - `ca-digest.service.ts`: Consolidated weekly digest summarizing all client deadlines due within 7 days into a single email, preserving Resend free-tier quota.
+    - `ca-workspace.controller.ts`: Secured REST endpoints (`/api/ca/firm`, `/api/ca/staff`, `/api/ca/clients/import/preview`, `/api/ca/clients/import/confirm`, `/api/ca/board`, `/api/ca/obligations/:id/assign`, `/api/ca/digest/preview`, `/api/ca/digest/send`).
+  - **Frontend CA Workspace UI (`apps/web/app/ca-workspace/page.tsx`):**
+    - Firm dashboard with summary KPI cards, timeframe filters (All, This Week, This Month, Overdue), and staff assignee filters.
+    - Master deadline table with real-time staff assignment dropdowns.
+    - CSV Bulk Import modal with dry-run validation error breakdown.
+    - Consolidated Weekly Digest preview modal with one-click dispatch.
+  - **Verification:** Verified with 9 end-to-end tests in `apps/api/test/ca-workspace.e2e-spec.ts` testing dry-run validation, plan capacity gating, bulk creation, board query and filtering, staff assignment, digest email dispatch, and cross-firm tenant isolation (55/55 e2e tests passing across all 8 suites).
+

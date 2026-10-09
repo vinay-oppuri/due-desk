@@ -207,6 +207,12 @@ export default function DashboardPage() {
               Ops / Admin
             </Link>
             <Link
+              href="/ca-workspace"
+              className="hidden sm:inline-flex items-center gap-1 py-1.5 px-3 text-xs font-mono uppercase bg-black hover:bg-neutral-900 border border-neutral-800 text-sky-400 hover:text-sky-300 transition-colors"
+            >
+              CA Workspace
+            </Link>
+            <Link
               href="/billing"
               className="hidden sm:inline-flex items-center gap-1 py-1.5 px-3 text-xs font-mono uppercase bg-black hover:bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-colors"
             >

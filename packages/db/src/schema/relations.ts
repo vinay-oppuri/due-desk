@@ -81,6 +81,10 @@ export const obligationRelations = relations(obligations, ({ one, many }) => ({
     fields: [obligations.ruleId],
     references: [complianceRules.id],
   }),
+  assignee: one(user, {
+    fields: [obligations.assignedTo],
+    references: [user.id],
+  }),
   filings: many(filings),
   reminders: many(reminders),
 }));

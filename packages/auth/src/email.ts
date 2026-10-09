@@ -250,3 +250,167 @@ export async function sendReminderEmail(
   }
 }
 
+export interface CaDigestClientItem {
+  clientName: string;
+  formCode: string;
+  ruleName: string;
+  dueDate: string;
+  status: string;
+  assignedToName?: string;
+}
+
+export interface SendCaDigestOptions {
+  email: string;
+  firmName: string;
+  items: CaDigestClientItem[];
+  overdueCount: number;
+  dueSoonCount: number;
+}
+
+/**
+ * Sends a consolidated weekly compliance digest for a CA firm managing multiple clients.
+ * Combines all client deadlines into a single email to conserve email budget and avoid inbox clutter.
+ */
+export async function sendCaDigestEmail({
+  email,
+  firmName,
+  items,
+  overdueCount,
+  dueSoonCount,
+}: SendCaDigestOptions): Promise<{ success: boolean; providerId?: string; error?: string }> {
+  console.log(`\n======================================================`);
+  console.log(`📑 [CA DIGEST EMAIL] Weekly Multi-Client Compliance Digest`);
+  console.log(`👉 To: ${email}`);
+  console.log(`👉 Firm: ${firmName}`);
+  console.log(`👉 Total Deadlines: ${items.length} (Overdue: ${overdueCount}, Due Soon: ${dueSoonCount})`);
+  console.log(`======================================================\n`);
+
+  const isDevelopment =
+    env.NODE_ENV === "development" || env.NODE_ENV === "test";
+
+  if (
+    !env.RESEND_API_KEY ||
+    env.RESEND_API_KEY.includes("your-resend-key") ||
+    env.RESEND_API_KEY === "" ||
+    !resend
+  ) {
+    if (!isDevelopment) {
+      console.warn(
+        "[Resend] RESEND_API_KEY is missing. Digest email was mocked locally.",
+      );
+    }
+    return {
+      success: true,
+      providerId: "mock_ca_digest_msg_id",
+    };
+  }
+
+  const subject = `[${firmName}] Weekly Compliance Digest: ${items.length} Deadlines (${overdueCount} Overdue)`;
+
+  const rowsHtml = items
+    .map(
+      (item) => `
+      <tr style="border-bottom: 1px solid #e2e8f0;">
+        <td style="padding: 10px; font-weight: 600; color: #0f172a;">${item.clientName}</td>
+        <td style="padding: 10px; color: #0284c7; font-weight: 600;">${item.formCode}</td>
+        <td style="padding: 10px; color: #475569;">${item.dueDate}</td>
+        <td style="padding: 10px;">
+          <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: ${
+            item.status === "late" ? "#fee2e2" : "#fef3c7"
+          }; color: ${item.status === "late" ? "#991b1b" : "#92400e"};">
+            ${item.status.toUpperCase()}
+          </span>
+        </td>
+        <td style="padding: 10px; color: #64748b; font-size: 13px;">${item.assignedToName || "Unassigned"}</td>
+      </tr>
+    `,
+    )
+    .join("");
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 32px 16px; color: #0f172a; }
+          .container { max-width: 680px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 28px; }
+          .title { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+          .sub { font-size: 14px; color: #64748b; margin-bottom: 20px; }
+          .stats { display: flex; gap: 12px; margin-bottom: 24px; }
+          .stat-box { flex: 1; padding: 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; text-align: center; }
+          .stat-val { font-size: 20px; font-weight: 800; }
+          .stat-lbl { font-size: 12px; color: #64748b; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 16px; }
+          th { text-align: left; padding: 10px; background: #f1f5f9; color: #475569; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+          .disclaimer { font-size: 12px; color: #94a3b8; line-height: 1.5; border-top: 1px solid #f1f5f9; padding-top: 16px; margin-top: 24px; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="title">${firmName} &bull; Multi-Client Compliance Digest</div>
+          <div class="sub">Executive summary of statutory deadlines across all your managed client companies.</div>
+          <div class="stats">
+            <div class="stat-box">
+              <div class="stat-val" style="color: #0284c7;">${items.length}</div>
+              <div class="stat-lbl">Total Due</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" style="color: #ef4444;">${overdueCount}</div>
+              <div class="stat-lbl">Overdue</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" style="color: #f59e0b;">${dueSoonCount}</div>
+              <div class="stat-lbl">Due Next 7 Days</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Form</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Assignee</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+          <div class="disclaimer">
+            <strong>Statutory Disclaimer:</strong> Reminder tool, not tax advice. Verify dates with the official portal or your CA.<br>
+            DueDesk &bull; Compliance Calendar for Indian Businesses
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: env.EMAIL_FROM,
+      to: [email],
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error("[Resend CA Digest Error]:", error);
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      providerId: data?.id,
+    };
+  } catch (err: any) {
+    console.error("[Resend CA Digest Request Failed]:", err);
+    return {
+      success: false,
+      error: err?.message || "Unknown digest send failure",
+    };
+  }
+}
+
+
