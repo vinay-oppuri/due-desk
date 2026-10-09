@@ -10,6 +10,7 @@ import {
   documents,
   memberships,
   organizations,
+  subscriptions,
   user,
   eq,
 } from '@repo/db';
@@ -97,6 +98,22 @@ describe('Phase 6: Document Vault & Private Storage (e2e)', () => {
       .from(memberships)
       .where(eq(memberships.userId, userBData.user.id));
     orgBId = memB!.organizationId;
+
+    // Provision standard subscription for testing orgs
+    await db.insert(subscriptions).values([
+      {
+        id: `sub_${randomUUID().replace(/-/g, '')}`,
+        organizationId: orgAId,
+        plan: 'standard',
+        status: 'active',
+      },
+      {
+        id: `sub_${randomUUID().replace(/-/g, '')}`,
+        organizationId: orgBId,
+        plan: 'standard',
+        status: 'active',
+      },
+    ]);
   });
 
   afterAll(async () => {

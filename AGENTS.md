@@ -110,8 +110,7 @@ Tick when the step's `Skip if` check passes or the work is merged. Add evidence 
 - [x] P4 Core app (onboarding wizard at /onboarding, compliance calendar at /dashboard with upcoming 30-day and month views, filing drawer with document checklists, status updates with immutable filings audit, .ics calendar feed, disclaimer on all views)
 - [x] P5 Reminder pipeline (outbox scanner with FOR UPDATE SKIP LOCKED, automatic 7/3/1 day reminder scheduling on obligation generation, Resend free tier budget guard with 90/day cap & 70% alert, exponential retry backoff to dead-letter queue after 5 attempts, daily self-healing watchdog repairing missing reminders, docs/runbook.md created, functions/ standalone Neon triggers created, 20/20 e2e tests passing)
 - [x] P6 Document vault (private Cloudflare R2 bucket integration via presigned PUT/GET URLs, tenant-scoped org keys, 10MB per-file limit, 100MB org storage quota, statutory retainUntil compliance lock, viewer write-protection, 9/9 e2e tests passing)
-- [x] P7 Reliability, security, backups, observability (automated weekly AES-256 pg_dump to Cloudflare R2, disaster recovery restore script scripts/restore.ts verified in dry-run mode, daily usage monitor with 70% alerts, admin dashboard at /admin with DLQ retry and failure logs, helmet security headers and throttler rate limiting, 36/36 e2e tests passing)
-- [ ] P8 Billing and plan gating
+- [x] P8 Billing and plan gating (Free/Standard/Pro tiers in @repo/rules, server-side gating on business limits and document vault, Razorpay hosted checkout & HMAC-SHA256 signature verification, idempotent webhook processing via webhook_events, 7-day grace period logic, statutory invoices logging, billing UI at /billing, 10/10 e2e tests passing, 46/46 e2e tests passing monorepo-wide)
 - [ ] P9 CA multi-client workspace
 - [ ] P10 Launch readiness (SEO, legal, DPDP)
 

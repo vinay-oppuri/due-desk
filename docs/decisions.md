@@ -213,3 +213,31 @@
     - Unverified statutory rules registry linking to official gazette notices.
   - **Verification:** Verified with 7 passing e2e tests in `apps/api/test/observability.e2e-spec.ts` (36/36 tests passing across all 6 test suites).
 
+## ADR 012: Billing, Plan Gating & Razorpay Webhook Infrastructure (Phase 8)
+
+- **Date:** 2026-10-09
+- **Context:** `AGENTS.md` mandates plan gating, zero-spend architecture, Razorpay hosted checkout integration, cryptographic signature verification, event idempotency, statutory invoice logging, and grace period handling.
+- **Decision:**
+  - **Plan Tiers & Gating Logic (`packages/rules/src/plans.ts`):**
+    - `Free`: 1 business, document vault disabled, 1 user, ₹0/month.
+    - `Standard`: 5 businesses, 100MB document vault, 5 users, ₹499/month (or ₹4,990/year).
+    - `Pro`: Unlimited businesses, 1GB document vault, unlimited users, ₹1,499/month (or ₹14,990/year).
+    - Pure rule functions: `canAddBusiness(plan, count)`, `canUseDocumentVault(plan)`, `canAddTeamMember(plan, count)`, `isSubscriptionUsable(status, periodEnd)`.
+  - **Server-Side Plan Gating:**
+    - `POST /api/businesses`: Evaluates `canAddBusiness` against the organization's active plan. Throws 403 Forbidden with upgrade prompt if limit is reached.
+    - `POST /api/documents/upload-url`: Evaluates `canUseDocumentVault`. Throws 403 Forbidden for Free plan users attempting to access cloud proof storage.
+  - **Razorpay Hosted Checkout (`POST /api/billing/checkout`):**
+    - Returns standardized hosted checkout payload (key ID, order ID, amount in paise, currency `INR`, organization notes) without touching card data.
+  - **Cryptographic Webhook Signature & Idempotency (`POST /api/billing/webhook`):**
+    - Validates `x-razorpay-signature` using HMAC-SHA256 against `RAZORPAY_WEBHOOK_SECRET`.
+    - Event deduplication using `webhook_events` table: duplicate event IDs return `{ received: true, status: 'already_processed' }` with no state changes.
+  - **Lifecycle & Grace Period Handling:**
+    - `subscription.authenticated`, `subscription.activated`, and `payment.captured` upgrade organization plan to target tier and refresh `currentPeriodEnd`.
+    - `subscription.halted` and `payment.failed` transition the organization to `grace_period` (7 days) without abrupt service interruption.
+    - `invoice.paid` records paid invoice records in `invoices` table with amount in INR.
+  - **Billing UI (`apps/web/app/billing/page.tsx`):**
+    - Displays active plan badge, business usage counter, storage meter, and billing cycle.
+    - Interactive plan comparison cards for Free, Standard, and Pro with upgrade buttons and feature checklist.
+    - Statutory invoice history table with payment date, invoice ID, and download links.
+  - **Verification:** Verified with 10 passing end-to-end tests in `apps/api/test/billing.e2e-spec.ts` (46/46 e2e tests passing across all 7 suites).
+

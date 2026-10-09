@@ -47,3 +47,13 @@ export const invoices = pgTable(
   },
   (table) => [index("invoices_organization_idx").on(table.organizationId)],
 );
+
+export const webhookEvents = pgTable("webhook_events", {
+  id: text("id").primaryKey(), // Razorpay event ID
+  provider: text("provider").notNull().default("razorpay"),
+  eventType: text("event_type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  ...timestamps,
+});

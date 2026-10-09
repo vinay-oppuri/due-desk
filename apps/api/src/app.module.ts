@@ -8,6 +8,7 @@ import { ComplianceModule } from './compliance/compliance.module.js';
 import { RemindersModule } from './reminders/reminders.module.js';
 import { DocumentsModule } from './documents/documents.module.js';
 import { ObservabilityModule } from './observability/observability.module.js';
+import { BillingModule } from './billing/billing.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ObservabilityModule } from './observability/observability.module.js';
     RemindersModule,
     DocumentsModule,
     ObservabilityModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [

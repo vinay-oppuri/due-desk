@@ -3,17 +3,9 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   and,
   desc,
@@ -22,8 +14,15 @@ import {
   filings,
   sum,
 } from '@repo/db';
-import { env } from '@repo/env';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/index.js';
+import { BillingService } from '../billing/billing.service.js';
+import {
+  DocumentsStorageService,
+  setStorageOverrideForTesting,
+  type StorageClientOverride,
+} from './services/documents-storage.service.js';
+
+export { setStorageOverrideForTesting, type StorageClientOverride };
 
 export const ALLOWED_MIME_TYPES = [
   'application/pdf',
@@ -51,46 +50,13 @@ export interface ConfirmUploadDto {
   retainUntil?: string;
 }
 
-export type StorageClientOverride = {
-  getSignedUrl: (command: any, options: any) => Promise<string>;
-  deleteObject?: (key: string) => Promise<void>;
-} | null;
-
-let customStorageOverride: StorageClientOverride = null;
-
-export function setStorageOverrideForTesting(override: StorageClientOverride) {
-  customStorageOverride = override;
-}
-
 @Injectable()
 export class DocumentsService {
-  private readonly logger = new Logger(DocumentsService.name);
-  private readonly s3Client: S3Client | null = null;
-  private readonly bucket: string | null = null;
-
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {
-    const isConfigured =
-      env.R2_ACCOUNT_ID &&
-      env.R2_ACCESS_KEY_ID &&
-      env.R2_SECRET_ACCESS_KEY &&
-      env.R2_BUCKET &&
-      !env.R2_ACCOUNT_ID.includes('your-');
-
-    if (isConfigured) {
-      this.bucket = env.R2_BUCKET!;
-      this.s3Client = new S3Client({
-        region: 'auto',
-        endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-        credentials: {
-          accessKeyId: env.R2_ACCESS_KEY_ID!,
-          secretAccessKey: env.R2_SECRET_ACCESS_KEY!,
-        },
-      });
-      this.logger.log(`Initialized S3 Client for Cloudflare R2 bucket: ${this.bucket}`);
-    } else {
-      this.logger.log('R2 credentials not provided. Operating in mock/test storage mode.');
-    }
-  }
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly storage: DocumentsStorageService,
+    private readonly billingService?: BillingService,
+  ) {}
 
   /**
    * Calculates current storage usage for an organization.
@@ -118,10 +84,17 @@ export class DocumentsService {
    * Generates a short-lived presigned PUT URL for direct client upload to Cloudflare R2.
    * Validates MIME type, file size limit (10MB), and tenant quota (100MB).
    */
-  async createUploadUrl(
-    orgId: string,
-    dto: RequestUploadDto,
-  ) {
+  async createUploadUrl(orgId: string, dto: RequestUploadDto) {
+    // 0. Verify Plan Gating for Document Vault
+    if (this.billingService) {
+      const subInfo = await this.billingService.getSubscription(orgId);
+      if (!subInfo.permissions.canUseDocumentVault) {
+        throw new ForbiddenException(
+          'Document vault is only available on Standard and Pro plans. Please upgrade your plan to upload proofs.',
+        );
+      }
+    }
+
     // 1. Validate MIME type
     if (!ALLOWED_MIME_TYPES.includes(dto.mimeType)) {
       throw new BadRequestException(
@@ -165,22 +138,12 @@ export class DocumentsService {
     const r2Key = `orgs/${orgId}/documents/${documentId}/${cleanFileName}`;
     const expiresIn = 300; // 5 minutes
 
-    let uploadUrl: string;
-
-    if (customStorageOverride) {
-      uploadUrl = await customStorageOverride.getSignedUrl({ key: r2Key, action: 'put' }, { expiresIn });
-    } else if (this.s3Client && this.bucket) {
-      const command = new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: r2Key,
-        ContentType: dto.mimeType,
-        ContentLength: dto.fileSize,
-      });
-      uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-    } else {
-      // Mock signed URL for development and testing
-      uploadUrl = `https://mock-r2.local/${r2Key}?action=put&expires=${Math.floor(Date.now() / 1000) + expiresIn}&sig=mock`;
-    }
+    const uploadUrl = await this.storage.getSignedUploadUrl(
+      r2Key,
+      dto.mimeType,
+      dto.fileSize,
+      expiresIn,
+    );
 
     return {
       documentId,
@@ -201,12 +164,10 @@ export class DocumentsService {
     documentId: string,
     dto: ConfirmUploadDto,
   ) {
-    // Prevent cross-tenant key injection: r2Key must be scoped to the organization
     if (!dto.r2Key.startsWith(`orgs/${orgId}/`)) {
       throw new ForbiddenException('Invalid storage key: does not belong to organization.');
     }
 
-    // Validate filing association if provided
     if (dto.filingId) {
       const [filing] = await this.db
         .select()
@@ -241,7 +202,6 @@ export class DocumentsService {
 
   /**
    * Generates a short-lived presigned GET URL for downloading a private document.
-   * Enforces tenant isolation.
    */
   async createDownloadUrl(orgId: string, documentId: string) {
     const [doc] = await this.db
@@ -259,19 +219,7 @@ export class DocumentsService {
     }
 
     const expiresIn = 900; // 15 minutes
-    let downloadUrl: string;
-
-    if (customStorageOverride) {
-      downloadUrl = await customStorageOverride.getSignedUrl({ key: doc.r2Key, action: 'get' }, { expiresIn });
-    } else if (this.s3Client && this.bucket) {
-      const command = new GetObjectCommand({
-        Bucket: this.bucket,
-        Key: doc.r2Key,
-      });
-      downloadUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
-    } else {
-      downloadUrl = `https://mock-r2.local/${doc.r2Key}?action=get&expires=${Math.floor(Date.now() / 1000) + expiresIn}&sig=mock`;
-    }
+    const downloadUrl = await this.storage.getSignedDownloadUrl(doc.r2Key, expiresIn);
 
     return {
       documentId: doc.id,
@@ -288,7 +236,7 @@ export class DocumentsService {
    * Lists documents for an organization with optional filing filter.
    */
   async listDocuments(orgId: string, filingId?: string) {
-    let query = this.db
+    const items = await this.db
       .select()
       .from(documents)
       .where(
@@ -301,7 +249,6 @@ export class DocumentsService {
       )
       .orderBy(desc(documents.createdAt));
 
-    const items = await query;
     const usage = await this.getStorageUsage(orgId);
 
     return {
@@ -342,20 +289,7 @@ export class DocumentsService {
     }
 
     // Delete object from R2 bucket
-    if (customStorageOverride?.deleteObject) {
-      await customStorageOverride.deleteObject(doc.r2Key);
-    } else if (this.s3Client && this.bucket) {
-      try {
-        await this.s3Client.send(
-          new DeleteObjectCommand({
-            Bucket: this.bucket,
-            Key: doc.r2Key,
-          }),
-        );
-      } catch (err: any) {
-        this.logger.error(`Error deleting object ${doc.r2Key} from R2: ${err.message}`);
-      }
-    }
+    await this.storage.deleteStorageObject(doc.r2Key);
 
     // Delete row from database
     await this.db

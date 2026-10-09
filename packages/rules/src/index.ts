@@ -3,3 +3,4 @@ export * from "./calendar.js";
 export * from "./matcher.js";
 export * from "./evaluator.js";
 export * from "./generator.js";
+export * from "./plans.js";
