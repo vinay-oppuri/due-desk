@@ -13,16 +13,16 @@ export default function Home() {
       {/* Two action buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-xs">
         <Link
-          href="/auth?mode=signup"
-          className="w-full sm:w-36 py-3 text-center text-xs tracking-wider uppercase font-mono font-semibold bg-white text-black hover:bg-neutral-200 border border-white rounded-none transition-colors"
+          href="/dashboard"
+          className="w-full sm:w-36 py-3 text-center text-xs tracking-wider uppercase font-mono font-semibold bg-neutral-900 text-white hover:bg-neutral-800 border border-neutral-700 hover:border-white rounded-none transition-colors"
         >
-          Signup
+          Dashboard
         </Link>
         <Link
           href="/auth?mode=signin"
-          className="w-full sm:w-36 py-3 text-center text-xs tracking-wider uppercase font-mono font-semibold bg-black text-white hover:bg-white hover:text-black border border-neutral-700 hover:border-white rounded-none transition-colors"
+          className="w-full sm:w-36 py-3 text-center text-xs tracking-wider uppercase font-mono font-semibold bg-white text-black hover:bg-neutral-200 border border-white rounded-none transition-colors"
         >
-          Login
+          Sign In
         </Link>
       </div>
 

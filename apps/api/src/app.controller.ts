@@ -63,37 +63,4 @@ export class AppController {
     );
     return rows;
   }
-
-  @Post('businesses')
-  @UseGuards(SessionGuard, RolesGuard)
-  @Roles('owner', 'accountant')
-  async createBusiness(
-    @Req() request: AuthenticatedRequest,
-    @Body()
-    body: {
-      name: string;
-      state: string;
-      businessType?: string;
-      turnoverBracket?: string;
-    },
-  ) {
-    const orgId = request.organizationId!;
-    const bizId = `biz_${randomUUID().replace(/-/g, '')}`;
-
-    await this.db.insert(businesses).values({
-      id: bizId,
-      organizationId: orgId,
-      name: body.name,
-      state: body.state,
-      businessType: body.businessType || 'private_limited',
-      turnoverBracket: body.turnoverBracket || 'under_20l',
-    });
-
-    return {
-      id: bizId,
-      organizationId: orgId,
-      name: body.name,
-      state: body.state,
-    };
-  }
 }

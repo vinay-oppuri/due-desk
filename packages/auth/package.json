@@ -15,6 +15,10 @@
     "./roles": {
       "types": "./src/roles.ts",
       "default": "./dist/roles.js"
+    },
+    "./email": {
+      "types": "./src/email.ts",
+      "default": "./dist/email.js"
     }
   },
   "scripts": {

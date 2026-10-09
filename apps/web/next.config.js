@@ -2,7 +2,7 @@ import { env } from "@repo/env";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@repo/ui", "@repo/auth", "@repo/env"],
+  transpilePackages: ["@repo/ui", "@repo/auth", "@repo/env", "@repo/rules"],
   async rewrites() {
     return [
       {

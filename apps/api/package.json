@@ -29,6 +29,7 @@
     "@repo/auth": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/env": "workspace:*",
+    "@repo/rules": "workspace:*",
     "better-auth": "^1.7.7",
     "express": "^5.2.1",
     "reflect-metadata": "^0.2.2",

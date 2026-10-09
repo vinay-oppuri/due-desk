@@ -41,6 +41,9 @@ importers:
       '@repo/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@repo/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
       better-auth:
         specifier: ^1.7.7
         version: 1.7.7(drizzle-kit@1.0.0-rc.4)(drizzle-orm@1.0.0-rc.4(@neondatabase/serverless@1.2.0)(zod@4.6.5))(next@16.3.4(@babel/core@8.0.1)(@types/node@24.19.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11)
@@ -160,6 +163,9 @@ importers:
       '@repo/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@repo/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui

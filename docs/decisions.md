@@ -112,5 +112,47 @@
     - Shifts day-by-day until the next working day.
   - **Government Extension Overrides:** Applied prior to holiday shifting to guarantee accurate downstream shifting.
   - **Idempotency & Versioning:** Every generated obligation records `ruleVersion` and enforces unique `(businessId, ruleId, periodLabel)`.
-  - **Seed Data:** Seeded 26 statutory candidate compliance rules, 10 holidays, and 10 rule conditions into Neon Postgres via `db/seeds/index.ts`, all with `verified = false` and official portal `sourceUrl` citations.
   - **Test Coverage:** 14 unit tests in `packages/rules/tests/rules-engine.test.ts` covering month-end and leap-year boundaries, weekend and holiday shifts, quarterly boundaries, extension overrides, expired rules, and idempotent regeneration.
+
+## ADR 008: Core Application, Onboarding Wizard & Compliance Calendar (Phase 4)
+
+- **Date:** 2026-10-06
+- **Context:** Phase 4 requires connecting the rules engine to the live application: onboarding businesses, automatically generating obligations in the database, displaying interactive calendar views, tracking filing status, and providing `.ics` calendar sync feeds.
+- **Decision:**
+  - **Compliance API Module:** Created `ComplianceModule`, `ComplianceService`, and `ComplianceController` in NestJS `apps/api`:
+    - `POST /api/businesses`: Saves business profiles and automatically invokes `@repo/rules` engine to compute and persist obligations into Postgres for the financial year.
+    - `GET /api/obligations`: Returns statutory obligations scoped by organization with status badges, dynamic late detection (`isLate`, `isDueSoon`, `daysRemaining`), and filtering by business, month, or status.
+    - `GET /api/obligations/:id`: Fetches obligation details including form-specific document checklists, direct official government portal URLs, and historical filing records.
+    - `POST /api/obligations/:id/file`: Updates obligation status to `filed` and appends an immutable record into `filings` with user ID, timestamp, and notes.
+    - `GET /api/calendar/feed.ics`: Generates standard RFC 5545 `.ics` iCalendar text for syncing deadlines with Google Calendar, Apple Calendar, and Outlook.
+  - **Web Frontend (`apps/web`):**
+    - Implemented business onboarding wizard at `/onboarding` capturing entity type, state, turnover, employee status, and registrations (GST, QRMP, PF, ESI, PT).
+    - Built comprehensive compliance calendar dashboard at `/dashboard` featuring metrics overview (Due Soon, Overdue, Filed), interactive month/30-day views, slide-over document checklist & filing drawer, and `.ics` sync.
+    - Ensured statutory disclaimer is prominently placed on all filing views and page footers.
+  - **Verification:** Added `apps/api/test/compliance.e2e-spec.ts` with 5 end-to-end tests verifying business creation, obligation queries, detail checklist, filing status transitions, and `.ics` feed generation (13/13 e2e tests passing across all test suites).
+
+## ADR 009: Outbox Pattern, Concurrency Locking & Self-Healing Reminder Pipeline (Phase 5)
+
+- **Date:** 2026-10-06
+- **Context:** `AGENTS.md` mandates a resilient, queue-less reminder pipeline stored as database rows with state in Postgres, scheduled triggers via Neon Function Triggers (UTC cron), concurrency safety via `FOR UPDATE SKIP LOCKED`, Resend free tier budget protections, exponential retry backoff, and a daily self-healing watchdog.
+- **Decision:**
+  - **Database-Driven Outbox:** Reminders live directly in the `reminders` table with states (`pending`, `sending`, `sent`, `failed`, `dead`), eliminating external queue dependencies.
+  - **Automated Scheduling on Obligation Generation:** When compliance obligations are created, reminders are automatically bulk-inserted for offsets 7, 3, and 1 days before statutory due dates with unique constraint `(obligation_id, channel, offset_days)`.
+  - **Concurrency & Claiming Mechanism:**
+    - Used atomic `UPDATE reminders SET state = 'sending' WHERE id IN (SELECT id ... FOR UPDATE SKIP LOCKED)` to safely lock and claim pending reminders. Multiple parallel workers or serverless invocations never process duplicate entries.
+  - **Batched Metadata & Recipient Fetching:** Pre-fetches obligation details, business names, rule descriptions, and organization member emails in batched queries with `inArray`, keeping execution fast and serverless-friendly.
+  - **Email Budget Guard (Resend Free Tier):**
+    - Tracks successful deliveries per day.
+    - Safe cap enforced at 90 emails/day (leaving 10 emails for critical auth OTPs).
+    - Logs operator alert when daily sends reach 70 emails (70% threshold).
+    - Defers reminder dispatches when threshold is reached, prioritizing obligations with nearest deadlines.
+  - **Retry Backoff & Dead-Letter Handling:**
+    - On failure, schedules retries using exponential backoff (`2^attempts * 15 minutes`).
+    - After 5 failed attempts, marks the reminder as `dead`, logs a critical dead-letter alert, and records failure details in `delivery_log`.
+  - **Filing Awareness:** If an obligation is marked `filed` prior to reminder transmission, the reminder is marked done/sent and skipped without calling the external email provider.
+  - **Self-Healing Daily Watchdog:** Daily audit function scans upcoming obligations due within the next 7 days and automatically restores any missing reminder rows.
+  - **Neon Serverless Functions & Trigger Runbook:**
+    - Implemented standalone handlers in `/functions/reminder-scan.ts` (hourly `0 * * * *`) and `/functions/watchdog.ts` (daily `0 3 * * *`).
+    - Documented operational runbook in `docs/runbook.md` with exact `neon triggers create` commands, incident protocols, and dead-letter handling.
+  - **Verification:** Verified with 7 end-to-end tests in `apps/api/test/reminders.e2e-spec.ts` covering automatic scheduling, duplicate scan idempotency, filed obligation skipping, retry-to-dead-letter, watchdog restoration, budget metrics, and organization scoping (20/20 e2e tests passing across all suites).
+
