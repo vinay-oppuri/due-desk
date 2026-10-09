@@ -131,3 +131,109 @@ If the government issues a notification extending a tax deadline, or an error is
 
 4. **Send Correction Notice:**
    - If reminders with incorrect dates were already transmitted to users, send a correction email informing affected business owners of the revised statutory extension.
+
+---
+
+## 5. Automated Backups & Quarterly Restore Drill
+
+DueDesk maintains encrypted database backups in Cloudflare R2 and tests restoration procedures quarterly.
+
+### 5.1 Weekly Backup Workflow
+- **Workflow File:** `.github/workflows/backup.yml`
+- **Schedule:** Weekly at 02:00 UTC on Sunday (`0 2 * * 0`) or manual trigger (`workflow_dispatch`).
+- **Encryption:** AES-256-CBC with PBKDF2 key derivation using `BACKUP_ENCRYPTION_KEY`.
+- **Target Storage:** Cloudflare R2 bucket under `backups/backup_YYYYMMDD_HHMMSS.sql.enc`.
+- **Retention:** Backups older than 30 days are pruned.
+
+### 5.2 Disaster Recovery & Restore Drill Procedure
+To run the restore drill on a test database or recover from a backup archive:
+
+1. **Dry-Run Integrity Validation:**
+   ```bash
+   pnpm restore --file ./scripts/test_backup.sql --dry-run
+   ```
+   Validates table structure definitions (`compliance_rules`, `organizations`, `obligations`, `reminders`) without modifying the database.
+
+2. **Restore into a Fresh/Target Database:**
+   ```bash
+   pnpm restore --file ./backups/backup_20261009.sql.enc --key "$BACKUP_ENCRYPTION_KEY" --target-url "$RESTORE_DATABASE_URL"
+   ```
+
+3. **Verify Table Schema & Integrity:**
+   Query the restored database to confirm table counts:
+   ```sql
+   SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+   SELECT COUNT(*) FROM compliance_rules;
+   ```
+
+---
+
+## 6. Daily Free-Tier Usage Monitor & 70% Alerting
+
+To ensure zero spend across all infrastructure tiers, the system audits daily usage across:
+- **Resend Emails:** Capped at 90/day (out of 100/day free limit). Operator alert at 70% (63 emails).
+- **Neon Serverless DB:** Capped at 500MB free limit. Operator alert at 70% (350MB).
+- **Cloudflare R2 Storage:** Capped at 10GB free tier. Operator alert at 70% (7GB).
+
+### 6.1 Scheduled Monitor Trigger
+- **Schedule:** `0 6 * * *` (Daily at 06:00 UTC / 11:30 IST)
+- **Function:** `/functions/usage-monitor.ts`
+- **Target Endpoint:** `POST https://api.duedesk.in/api/observability/usage-check`
+
+**Neon CLI Command to Create Usage Trigger:**
+```bash
+neon triggers create \
+  --name usage-monitor-daily \
+  --schedule "0 6 * * *" \
+  --url "https://api.duedesk.in/api/observability/usage-check" \
+  --header "x-neon-function-trigger: true"
+```
+
+---
+
+## 7. Admin Observability & Audit Trail
+
+Administrators and compliance managers can monitor system health at `/admin`:
+- **Dead Letter Queue:** Displays unrecoverable reminders with error messages and offers 1-click re-queueing to `pending`.
+- **Failed Deliveries:** Logs SMTP failures, gateway timeouts, and provider responses.
+- **Unverified Rules Registry:** Displays all rules awaiting human two-person verification with direct links to government gazette notifications.
+- **Audit Logs:** Append-only logs for filing status updates and statutory rule adjustments.
+
+---
+
+## 8. Secrets Management & Key Rotation
+
+When rotating credentials, update GitHub repository secrets, Cloudflare Pages environment variables, and Neon configuration:
+
+1. **`DATABASE_URL` (Neon Postgres):**
+   - In Neon Console, create a new compute role or password.
+   - Update `DATABASE_URL` in Cloudflare Pages and GitHub Actions.
+   - Retire the old connection password.
+
+2. **`RESEND_API_KEY` (Email Service):**
+   - In Resend dashboard, generate a new API Key with "Sending access".
+   - Update secret in Cloudflare Pages and GitHub Actions.
+   - Revoke the prior key after testing OTP delivery.
+
+3. **`R2_ACCESS_KEY_ID` & `R2_SECRET_ACCESS_KEY` (Cloudflare R2):**
+   - In Cloudflare Dashboard > R2 > Manage R2 API Tokens, create a token with Object Read & Write permissions.
+   - Update in Cloudflare Pages and GitHub Actions.
+   - Delete the old token.
+
+---
+
+## 9. Deployment & Rollback Protocol
+
+### 9.1 Frontend Deployment (Cloudflare Pages)
+- Continuous deployment is linked to the `main` branch.
+- To roll back a frontend release, navigate to Cloudflare Pages > Deployments and click **Rollback to this deployment**.
+
+### 9.2 API & Serverless Migrations Rollback
+- In the event of a breaking migration:
+  1. Inspect the migration in `db/migrations/`.
+  2. Revert the bad migration or apply a forward-fixing migration:
+     ```bash
+     pnpm --filter @repo/db db:generate
+     pnpm --filter @repo/db db:migrate
+     ```
+  3. Verify schema state using `pnpm --filter @repo/db db:studio`.

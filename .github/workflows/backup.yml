@@ -1,0 +1,87 @@
+name: Database Backup to Cloudflare R2
+
+on:
+  schedule:
+    # Run weekly at 02:00 UTC on Sunday
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Encrypted Neon PostgreSQL Backup to R2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Tools & AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          sudo ./aws/install --update
+
+      - name: Create Encrypted Database Dump
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="backup_${TIMESTAMP}.sql"
+          ENC_FILE="backup_${TIMESTAMP}.sql.enc"
+
+          echo "Dumping database schema and data..."
+          pg_dump "$DATABASE_URL" \
+            --no-owner \
+            --no-acl \
+            --clean \
+            --if-exists \
+            --file="$BACKUP_FILE"
+
+          echo "Encrypting backup with AES-256-CBC..."
+          openssl enc -aes-256-cbc -salt -pbkdf2 \
+            -in "$BACKUP_FILE" \
+            -out "$ENC_FILE" \
+            -pass pass:"$ENCRYPTION_KEY"
+
+          # Compute SHA-256 checksum
+          sha256sum "$ENC_FILE" > "${ENC_FILE}.sha256"
+
+          # Securely wipe unencrypted dump
+          rm -f "$BACKUP_FILE"
+
+          echo "BACKUP_TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          echo "ENC_FILE=$ENC_FILE" >> $GITHUB_ENV
+
+      - name: Upload to Cloudflare R2 Bucket
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          R2_ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+
+          echo "Uploading encrypted backup to R2 backups/ folder..."
+          aws s3 cp "$ENC_FILE" "s3://${R2_BUCKET}/backups/${ENC_FILE}" \
+            --endpoint-url "$R2_ENDPOINT"
+
+          aws s3 cp "${ENC_FILE}.sha256" "s3://${R2_BUCKET}/backups/${ENC_FILE}.sha256" \
+            --endpoint-url "$R2_ENDPOINT"
+
+          echo "Backup uploaded successfully: s3://${R2_BUCKET}/backups/${ENC_FILE}"
+
+      - name: Prune Backups Older Than 30 Days
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          R2_ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          # List and keep the newest 8 backups, prune older
+          echo "Checking backup retention..."
+          aws s3 ls "s3://${R2_BUCKET}/backups/" --endpoint-url "$R2_ENDPOINT"

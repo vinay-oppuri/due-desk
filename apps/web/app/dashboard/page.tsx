@@ -200,6 +200,12 @@ export default function DashboardPage() {
             >
               Sync .ICS
             </button>
+            <Link
+              href="/admin"
+              className="hidden sm:inline-flex items-center gap-1 py-1.5 px-3 text-xs font-mono uppercase bg-black hover:bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-teal-300 transition-colors"
+            >
+              Ops / Admin
+            </Link>
             <button
               type="button"
               onClick={() =>
@@ -315,33 +321,30 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setViewMode("30days")}
-                  className={`px-3 py-1.5 text-xs font-mono uppercase transition-colors ${
-                    viewMode === "30days"
+                  className={`px-3 py-1.5 text-xs font-mono uppercase transition-colors ${viewMode === "30days"
                       ? "bg-white text-black font-semibold"
                       : "bg-black text-neutral-400 hover:text-white"
-                  }`}
+                    }`}
                 >
                   Next 30 Days
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("month")}
-                  className={`px-3 py-1.5 text-xs font-mono uppercase transition-colors ${
-                    viewMode === "month"
+                  className={`px-3 py-1.5 text-xs font-mono uppercase transition-colors ${viewMode === "month"
                       ? "bg-white text-black font-semibold"
                       : "bg-black text-neutral-400 hover:text-white"
-                  }`}
+                    }`}
                 >
                   This Month
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("all")}
-                  className={`px-3 py-1.5 text-xs font-mono uppercase transition-colors ${
-                    viewMode === "all"
+                  className={`px-3 py-1.5 text-xs font-mono uppercase transition-colors ${viewMode === "all"
                       ? "bg-white text-black font-semibold"
                       : "bg-black text-neutral-400 hover:text-white"
-                  }`}
+                    }`}
                 >
                   Full FY
                 </button>
@@ -354,11 +357,10 @@ export default function DashboardPage() {
                     key={st}
                     type="button"
                     onClick={() => setStatusFilter(st)}
-                    className={`px-2.5 py-1 text-xs font-mono uppercase border transition-colors ${
-                      statusFilter === st
+                    className={`px-2.5 py-1 text-xs font-mono uppercase border transition-colors ${statusFilter === st
                         ? "border-white bg-white text-black font-medium"
                         : "border-neutral-800 bg-black text-neutral-400 hover:border-neutral-700"
-                    }`}
+                      }`}
                   >
                     {st}
                   </button>
@@ -376,7 +378,7 @@ export default function DashboardPage() {
                 No statutory deadlines matching the selected filters.
               </div>
             ) : (
-              <div className="border border-neutral-800 divide-y divide-neutral-900 bg-neutral-950">
+              <div className="border divide-y divide-neutral-900 bg-neutral-950">
                 {obligations.map((item) => {
                   let badgeColor =
                     "bg-neutral-900 text-neutral-400 border-neutral-800";
@@ -490,13 +492,12 @@ export default function DashboardPage() {
                     Status
                   </span>
                   <span
-                    className={`font-bold uppercase ${
-                      activeDetail.status === "filed"
+                    className={`font-bold uppercase ${activeDetail.status === "filed"
                         ? "text-emerald-400"
                         : activeDetail.isLate
                           ? "text-red-400"
                           : "text-amber-400"
-                    }`}
+                      }`}
                   >
                     {activeDetail.status}
                   </span>

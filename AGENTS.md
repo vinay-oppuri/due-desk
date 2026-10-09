@@ -107,9 +107,10 @@ Tick when the step's `Skip if` check passes or the work is merged. Add evidence 
 - [x] P1 Database and migrations (19 tables with indexes migrated to Neon via db/migrations, RLS enabled on all 9 tenant tables, db/seeds loaded idempotently, vitest tenant isolation test passed)
 - [x] P2 Auth and tenancy (Better Auth in own DB on Neon Postgres, auto-provisioned organization & owner membership on signup, RBAC roles helper with owner/accountant/ca/viewer, SessionGuard with tenant resolution, Postgres RLS via withTenantHttp, apps/api e2e test passing 8/8 tests proving cross-tenant isolation and role enforcement)
 - [x] P3 Rules engine and seed data (pure @repo/rules engine implemented with matchRules, computeDueDate, generateObligations; 14/14 vitest tests passing edge cases; 26 candidate rules, 10 holidays, and 10 rule conditions seeded idempotently into Neon)
+- [x] P4 Core app (onboarding wizard at /onboarding, compliance calendar at /dashboard with upcoming 30-day and month views, filing drawer with document checklists, status updates with immutable filings audit, .ics calendar feed, disclaimer on all views)
 - [x] P5 Reminder pipeline (outbox scanner with FOR UPDATE SKIP LOCKED, automatic 7/3/1 day reminder scheduling on obligation generation, Resend free tier budget guard with 90/day cap & 70% alert, exponential retry backoff to dead-letter queue after 5 attempts, daily self-healing watchdog repairing missing reminders, docs/runbook.md created, functions/ standalone Neon triggers created, 20/20 e2e tests passing)
-- [ ] P6 Document vault
-- [ ] P7 Reliability, security, backups, observability
+- [x] P6 Document vault (private Cloudflare R2 bucket integration via presigned PUT/GET URLs, tenant-scoped org keys, 10MB per-file limit, 100MB org storage quota, statutory retainUntil compliance lock, viewer write-protection, 9/9 e2e tests passing)
+- [x] P7 Reliability, security, backups, observability (automated weekly AES-256 pg_dump to Cloudflare R2, disaster recovery restore script scripts/restore.ts verified in dry-run mode, daily usage monitor with 70% alerts, admin dashboard at /admin with DLQ retry and failure logs, helmet security headers and throttler rate limiting, 36/36 e2e tests passing)
 - [ ] P8 Billing and plan gating
 - [ ] P9 CA multi-client workspace
 - [ ] P10 Launch readiness (SEO, legal, DPDP)
