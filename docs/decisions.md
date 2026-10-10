@@ -152,7 +152,7 @@
   - **Filing Awareness:** If an obligation is marked `filed` prior to reminder transmission, the reminder is marked done/sent and skipped without calling the external email provider.
   - **Self-Healing Daily Watchdog:** Daily audit function scans upcoming obligations due within the next 7 days and automatically restores any missing reminder rows.
   - **Neon Serverless Functions & Trigger Runbook:**
-    - Implemented standalone handlers in `/functions/reminder-scan.ts` (hourly `0 * * * *`) and `/functions/watchdog.ts` (daily `0 3 * * *`).
+    - Implemented standalone handlers in `apps/api/src/cron/reminder-scan.ts` (hourly `0 * * * *`) and `apps/api/src/cron/watchdog.ts` (daily `0 3 * * *`).
     - Documented operational runbook in `docs/runbook.md` with exact `neon triggers create` commands, incident protocols, and dead-letter handling.
   - **Verification:** Verified with 7 end-to-end tests in `apps/api/test/reminders.e2e-spec.ts` covering automatic scheduling, duplicate scan idempotency, filed obligation skipping, retry-to-dead-letter, watchdog restoration, budget metrics, and organization scoping (20/20 e2e tests passing across all suites).
 
@@ -195,7 +195,7 @@
   - **Disaster Recovery Restore Script (`scripts/restore.ts`):**
     - Built standalone restore utility supporting dry-run table schema validation (`pnpm restore --file <file> --dry-run`).
     - Decrypts AES-256 archives with PBKDF2 key derivation and restores into any target database (`RESTORE_DATABASE_URL`).
-  - **Daily Free-Tier Usage Monitor (`apps/api/src/observability/` & `functions/usage-monitor.ts`):**
+  - **Daily Free-Tier Usage Monitor (`apps/api/src/observability/` & `apps/api/src/cron/usage-monitor.ts`):**
     - Audits daily usage across:
       1. Resend email deliveries: Capped at 90/day (out of 100/day free limit). Operator alert at 70% (63 sends).
       2. Neon database storage: Capped at 500MB free tier. Operator alert at 70% (350MB).

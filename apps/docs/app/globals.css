@@ -1,4 +1,0 @@
-@import "@repo/ui/styles.css";
-
-/* Tailwind v4 does not scan workspace packages automatically. */
-@source "../../../packages/ui/src/**/*.{ts,tsx}";

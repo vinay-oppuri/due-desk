@@ -177,7 +177,7 @@ To ensure zero spend across all infrastructure tiers, the system audits daily us
 
 ### 6.1 Scheduled Monitor Trigger
 - **Schedule:** `0 6 * * *` (Daily at 06:00 UTC / 11:30 IST)
-- **Function:** `/functions/usage-monitor.ts`
+- **Function:** `apps/api/src/cron/usage-monitor.ts`
 - **Target Endpoint:** `POST https://api.duedesk.in/api/observability/usage-check`
 
 **Neon CLI Command to Create Usage Trigger:**
